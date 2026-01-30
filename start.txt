@@ -1,7 +1,4 @@
 cd "/home/orangepi/Documents/Projekt 4.B/"
 python3 main.py
 
-
-librery:
-pytermgui
-just-playback
+test
