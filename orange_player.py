@@ -13,7 +13,7 @@ class MusicPlayer(QWidget):
         super().__init__()
 
         self.setWindowTitle("OpenTune Player")
-        self.setFixedSize(800, 480)  # velikost dotykového displeje
+        self.setFixedSize(800, 480)
 
         # ===== VLC =====
         self.instance = vlc.Instance()
