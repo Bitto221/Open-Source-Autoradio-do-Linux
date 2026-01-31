@@ -4,7 +4,7 @@ def open_youtube_music():
     subprocess.Popen([
         "chromium-browser",
         "--app=https://music.youtube.com",
-        "--start-maximized",
+        "--window-size=800,480",
         "--disable-infobars",
         "--no-first-run"
     ])

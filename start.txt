@@ -1,4 +1,7 @@
+Orangepi
 cd "/home/orangepi/Documents/Projekt 4.B/"
 python3 main.py
 
-test
+Notebook
+cd "/home/linusmisa/Projekty/Projekt 4.B/"
+python3 main.py

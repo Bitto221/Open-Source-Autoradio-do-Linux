@@ -13,7 +13,6 @@ API_KEY = "4e51d8b7ce09f005478ff9f2fe9411c0"
 CITY = "Prague"
 CACHE_FILE = "weather_cache.json"
 
-# BARVY
 BG = "#000000"
 CARD = "#111111"
 ACCENT = "#a855f7"
@@ -79,13 +78,11 @@ class WeatherApp(QWidget):
         main.addWidget(card)
         self.setLayout(main)
 
-    # ---------- CACHE ----------
     def save_cache(self, data):
         data["_cached_at"] = datetime.now().strftime("%d.%m.%Y %H:%M")
         with open(CACHE_FILE, "w") as f:
             json.dump(data, f)
 
-    # ---------- LOAD ----------
     def load_weather(self):
         url = (
             f"https://api.openweathermap.org/data/2.5/weather"

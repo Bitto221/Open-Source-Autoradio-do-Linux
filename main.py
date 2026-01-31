@@ -13,19 +13,16 @@ ICON_PATH = os.path.join(BASE_DIR, "icons")
 BACKGROUND_PATH = os.path.join(BASE_DIR, "background.jpg")
 
 APPS = [
-    # 1. řada – hlavní
     {"file": "orange_player.py", "icon": "orange_player.png"},
     {"file": "youtube.py", "icon": "youtube.png"},
     {"file": "spotube.py", "icon": "spotube.png"},
     {"file": "youtube_music.py", "icon": "youtube_music.png"},
 
-    # 2. řada – multimédia / auto
     {"file": "video.py", "icon": "vlc.png"},
     {"file": "DUB.py", "icon": "dab.png"},
     {"file": "pocasi.py", "icon": "pocasi.png"},
     {"file": "car.py", "icon": "car.png"},
 
-    # 3. řada – systém
     {"file": "settings.py", "icon": "settings.png"},
     {"file": "bluetooth.py", "icon": "bluetooth.png"},
     {"file": "FM_radio.py", "icon": "fm.png"},
@@ -93,7 +90,6 @@ class Launcher(QWidget):
         central_layout.addLayout(grid)
         central_layout.addStretch()
 
-        # ===== Spodní lišta =====
         bottom_bar = QWidget()
         bottom_bar.setFixedHeight(40)
         bottom_bar.setStyleSheet("background-color: black;")

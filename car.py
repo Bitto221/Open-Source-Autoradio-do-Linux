@@ -1,16 +1,16 @@
 import sys
 import os
-import vlc
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QPushButton, QLabel,
     QFileDialog, QSlider, QHBoxLayout, QVBoxLayout
 )
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt
 
 class CarSettings(QWidget):
     def __init__(self):
         super().__init__()
 
+        # UI
         self.setWindowTitle("Car Settings") 
         self.setFixedSize(800, 480)
 
@@ -22,7 +22,7 @@ class CarSettings(QWidget):
         self.switch2_btn = QPushButton("Switch2")
         self.switch3_btn = QPushButton("Switch3")
 
-
+        # Layout
         controls = QHBoxLayout()
         controls.setSpacing(20)
         controls.addStretch()
@@ -39,7 +39,7 @@ class CarSettings(QWidget):
         self.setLayout(layout)
 
 
-        # ===== STYLE =====
+        # STYLE
         self.setStyleSheet("""
         QWidget {
             background-color: #0f0f14;
@@ -48,44 +48,26 @@ class CarSettings(QWidget):
         }
 
         QLabel#title {
-            font-size: 28px;
+            font-size: 40px;
             font-weight: bold;
         }
 
         QLabel#label {
-            font-size: 14px;
+            font-size: 40px;
             color: #b0b0b0;
         }
 
         QPushButton {
             background-color: #1c1c28;
             border-radius: 28px;
-            font-size: 22px;
+            font-size: 30px;
             color: white;
-            min-width: 56px;
+            min-width: 200px;
             min-height: 56px;
         }
 
         QPushButton:hover {
             background-color: #6a4df4;
-        }
-
-        QPushButton#add {
-            background-color: #6a4df4;
-            font-size: 26px;
-        }
-
-        QSlider::groove:horizontal {
-            height: 6px;
-            background: #2a2a38;
-            border-radius: 3px;
-        }
-
-        QSlider::handle:horizontal {
-            width: 18px;
-            background: #6a4df4;
-            margin: -6px 0;
-            border-radius: 9px;
         }
         """)
 

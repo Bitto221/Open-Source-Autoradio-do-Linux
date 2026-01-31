@@ -15,12 +15,12 @@ class MusicPlayer(QWidget):
         self.setWindowTitle("OpenTune Player")
         self.setFixedSize(800, 480)
 
-        # ===== VLC =====
+        # VLC
         self.instance = vlc.Instance()
         self.player = self.instance.media_player_new()
         self.player.audio_set_volume(80)
 
-        # ===== UI =====
+        # UI
         self.title = QLabel("No song selected")
         self.title.setAlignment(Qt.AlignCenter)
         self.title.setObjectName("title")
@@ -49,7 +49,7 @@ class MusicPlayer(QWidget):
         vol_label = QLabel("Volume")
         vol_label.setObjectName("label")
 
-        # ===== Layout =====
+        # Layout
         top = QHBoxLayout()
         top.addStretch()
         top.addWidget(self.add_btn)
@@ -77,7 +77,7 @@ class MusicPlayer(QWidget):
 
         self.setLayout(layout)
 
-        # ===== Signals =====
+        # Signals
         self.add_btn.clicked.connect(self.open_file)
         self.play_btn.clicked.connect(self.player.play)
         self.pause_btn.clicked.connect(self.player.pause)
@@ -92,7 +92,7 @@ class MusicPlayer(QWidget):
 
         self.media = None
 
-        # ===== STYLE =====
+        # STYLE
         self.setStyleSheet("""
         QWidget {
             background-color: #0f0f14;
@@ -142,7 +142,7 @@ class MusicPlayer(QWidget):
         }
         """)
 
-    # ===== Functions =====
+    # Functions
 
     def open_file(self):
         file, _ = QFileDialog.getOpenFileName(
