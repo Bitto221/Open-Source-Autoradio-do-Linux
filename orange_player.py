@@ -12,7 +12,7 @@ class MusicPlayer(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("OpenTune Player")
+        self.setWindowTitle("Orange Player")
         self.setFixedSize(800, 480)
 
         # VLC
@@ -95,13 +95,13 @@ class MusicPlayer(QWidget):
         # STYLE
         self.setStyleSheet("""
         QWidget {
-            background-color: #0f0f14;
+            background-color: #000000;
             color: #ffffff;
             font-family: Arial;
         }
 
         QLabel#title {
-            font-size: 28px;
+            font-size: 40px;
             font-weight: bold;
         }
 

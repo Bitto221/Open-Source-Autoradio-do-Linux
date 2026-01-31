@@ -11,27 +11,24 @@ class VideoPlayer(QWidget):
         super().__init__()
         self.setWindowTitle("Video Player")
         self.setFixedSize(800, 480)
-        self.setStyleSheet("background-color: #0e0e0e;")
+        self.setStyleSheet("background-color: #000000;")
 
         layout = QVBoxLayout()
         layout.setAlignment(Qt.AlignCenter)
 
         title = QLabel("Video přehrávač")
-        title.setFont(QFont("Arial", 24, QFont.Bold))
-        title.setStyleSheet("color: #bb86fc;")
+        title.setFont(QFont("Arial", 34, QFont.Bold))
+        title.setStyleSheet("color: white;")
         title.setAlignment(Qt.AlignCenter)
 
-        self.btn = QPushButton("📁 Vybrat video (USB / disk)")
+        self.btn = QPushButton("📁 Vybrat video")
         self.btn.setFixedSize(360, 80)
         self.btn.setFont(QFont("Arial", 16))
         self.btn.setStyleSheet("""
             QPushButton {
-                background-color: #bb86fc;
-                color: black;
+                background-color: #6a4df4;
+                color: white;
                 border-radius: 20px;
-            }
-            QPushButton:hover {
-                background-color: #d0a8ff;
             }
         """)
         self.btn.clicked.connect(self.open_file)
@@ -45,8 +42,6 @@ class VideoPlayer(QWidget):
     def open_file(self):
         file_path, _ = QFileDialog.getOpenFileName(
             self,
-            "Vyber video",
-            "/media",   # 👈 zde jsou USB disky
             "Video (*.mp4 *.mkv *.avi *.mov)"
         )
 

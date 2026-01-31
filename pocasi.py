@@ -15,7 +15,7 @@ CACHE_FILE = "weather_cache.json"
 
 BG = "#000000"
 CARD = "#111111"
-ACCENT = "#a855f7"
+ACCENT = "#6a4df4"
 TEXT = "#ffffff"
 SUB = "#aaaaaa"
 
@@ -33,7 +33,7 @@ class WeatherApp(QWidget):
         main.setSpacing(15)
 
         title = QLabel("Počasí")
-        title.setFont(QFont("Arial", 26))
+        title.setFont(QFont("Arial", 40, QFont.Bold))
         title.setAlignment(Qt.AlignCenter)
         title.setStyleSheet(f"color: {ACCENT};")
         main.addWidget(title)
