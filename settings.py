@@ -13,7 +13,7 @@ class Settings(QWidget):
         super().__init__()
         self.setWindowTitle("Nastavení")
         self.setFixedSize(800, 480)
-        self.setStyleSheet("background-color: #0b0b0b; color: white;")
+        self.setStyleSheet("background-color: #000000; color: white;")
         self.init_ui()
 
     def init_ui(self):

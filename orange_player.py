@@ -28,11 +28,13 @@ class MusicPlayer(QWidget):
         self.add_btn = QPushButton("＋")
         self.add_btn.setObjectName("add")
 
+        self.back_btn = QPushButton("<")
         self.play_btn = QPushButton("▶")
         self.pause_btn = QPushButton("⏸")
         self.stop_btn = QPushButton("■")
+        self.next_btn = QPushButton(">")
 
-        for b in (self.play_btn, self.pause_btn, self.stop_btn):
+        for b in (self.play_btn, self.pause_btn, self.stop_btn, self.back_btn, self.next_btn):
             b.setObjectName("control")
 
         # progress
@@ -57,9 +59,11 @@ class MusicPlayer(QWidget):
         controls = QHBoxLayout()
         controls.setSpacing(20)
         controls.addStretch()
+        controls.addWidget(self.back_btn)
         controls.addWidget(self.play_btn)
         controls.addWidget(self.pause_btn)
         controls.addWidget(self.stop_btn)
+        controls.addWidget(self.next_btn)
         controls.addStretch()
 
         volume_layout = QHBoxLayout()
@@ -84,6 +88,8 @@ class MusicPlayer(QWidget):
         self.stop_btn.clicked.connect(self.player.stop)
         self.progress.sliderMoved.connect(self.set_position)
         self.volume.valueChanged.connect(self.set_volume)
+        self.back_btn.clicked.connect(self.nextInFocusChain)
+        self.next_btn.clicked.connect(self.nextInFocusChain)
 
         # timer
         self.timer = QTimer(self)
