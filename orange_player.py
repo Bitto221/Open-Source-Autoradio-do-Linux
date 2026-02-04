@@ -7,6 +7,8 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt, QTimer
 
+import style
+
 
 class MusicPlayer(QWidget):
     def __init__(self):
@@ -20,6 +22,10 @@ class MusicPlayer(QWidget):
         self.player = self.instance.media_player_new()
         self.player.audio_set_volume(80)
 
+        # PLAYLIST
+        self.playlist = []
+        self.current_index = -1
+
         # UI
         self.title = QLabel("No song selected")
         self.title.setAlignment(Qt.AlignCenter)
@@ -28,30 +34,25 @@ class MusicPlayer(QWidget):
         self.add_btn = QPushButton("＋")
         self.add_btn.setObjectName("add")
 
-        self.back_btn = QPushButton("<")
+        self.back_btn = QPushButton("⏮")
         self.play_btn = QPushButton("▶")
         self.pause_btn = QPushButton("⏸")
         self.stop_btn = QPushButton("■")
-        self.next_btn = QPushButton(">")
-
-        for b in (self.play_btn, self.pause_btn, self.stop_btn, self.back_btn, self.next_btn):
-            b.setObjectName("control")
+        self.next_btn = QPushButton("⏭")
 
         # progress
         self.progress = QSlider(Qt.Horizontal)
-        self.progress.setObjectName("progress")
         self.progress.setRange(0, 1000)
 
         # volume
         self.volume = QSlider(Qt.Horizontal)
-        self.volume.setObjectName("volume")
         self.volume.setRange(0, 100)
         self.volume.setValue(80)
 
         vol_label = QLabel("Volume")
         vol_label.setObjectName("label")
 
-        # Layout
+        # Layouts
         top = QHBoxLayout()
         top.addStretch()
         top.addWidget(self.add_btn)
@@ -82,83 +83,56 @@ class MusicPlayer(QWidget):
         self.setLayout(layout)
 
         # Signals
-        self.add_btn.clicked.connect(self.open_file)
-        self.play_btn.clicked.connect(self.player.play)
+        self.add_btn.clicked.connect(self.add_files)
+        self.play_btn.clicked.connect(self.play)
         self.pause_btn.clicked.connect(self.player.pause)
         self.stop_btn.clicked.connect(self.player.stop)
+        self.next_btn.clicked.connect(self.next_song)
+        self.back_btn.clicked.connect(self.prev_song)
         self.progress.sliderMoved.connect(self.set_position)
         self.volume.valueChanged.connect(self.set_volume)
-        self.back_btn.clicked.connect(self.nextInFocusChain)
-        self.next_btn.clicked.connect(self.nextInFocusChain)
 
         # timer
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_progress)
         self.timer.start(400)
 
-        self.media = None
-
         # STYLE
-        self.setStyleSheet("""
-        QWidget {
-            background-color: #000000;
-            color: #ffffff;
-            font-family: Arial;
-        }
+        self.setStyleSheet(style.stylesheet())
 
-        QLabel#title {
-            font-size: 40px;
-            font-weight: bold;
-        }
+    # ====== PLAYER LOGIC ======
 
-        QLabel#label {
-            font-size: 14px;
-            color: #b0b0b0;
-        }
-
-        QPushButton {
-            background-color: #1c1c28;
-            border-radius: 28px;
-            font-size: 22px;
-            color: white;
-            min-width: 56px;
-            min-height: 56px;
-        }
-
-        QPushButton:hover {
-            background-color: #6a4df4;
-        }
-
-        QPushButton#add {
-            background-color: #6a4df4;
-            font-size: 26px;
-        }
-
-        QSlider::groove:horizontal {
-            height: 6px;
-            background: #2a2a38;
-            border-radius: 3px;
-        }
-
-        QSlider::handle:horizontal {
-            width: 18px;
-            background: #6a4df4;
-            margin: -6px 0;
-            border-radius: 9px;
-        }
-        """)
-
-    # Functions
-
-    def open_file(self):
-        file, _ = QFileDialog.getOpenFileName(
-            self, "Select song", "", "Audio (*.mp3 *.wav *.ogg *.flac)"
+    def add_files(self):
+        files, _ = QFileDialog.getOpenFileNames(
+            self, "Select songs", "", "Audio (*.mp3 *.wav *.ogg *.flac)"
         )
-        if file:
-            self.media = self.instance.media_new(file)
-            self.player.set_media(self.media)
+        if files:
+            self.playlist.extend(files)
+            if self.current_index == -1:
+                self.current_index = 0
+                self.load_current()
+
+    def load_current(self):
+        if 0 <= self.current_index < len(self.playlist):
+            file = self.playlist[self.current_index]
+            media = self.instance.media_new(file)
+            self.player.set_media(media)
             self.title.setText(os.path.basename(file))
             self.player.play()
+
+    def play(self):
+        if not self.player.is_playing():
+            self.player.play()
+
+    def next_song(self):
+        if self.current_index + 1 < len(self.playlist):
+            self.current_index += 1
+            self.load_current()
+
+    def prev_song(self):
+        if self.current_index > 0:
+            self.current_index -= 1
+            self.load_current()
 
     def update_progress(self):
         if self.player.is_playing():
