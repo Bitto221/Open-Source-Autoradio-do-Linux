@@ -1,6 +1,7 @@
 import sys
 import os
 import vlc
+
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QPushButton, QLabel,
     QFileDialog, QSlider, QHBoxLayout, QVBoxLayout
@@ -14,37 +15,31 @@ class MusicPlayer(QWidget):
     def __init__(self):
         super().__init__()
 
+        # ===== WINDOW =====
         self.setWindowTitle("Orange Player")
         self.setFixedSize(800, 480)
+        self.setWindowFlags(Qt.Window)
 
-        # VLC
-        self.instance = vlc.Instance()
-        self.player = self.instance.media_player_new()
+        # ===== VLC =====
+        self.vlc_instance = vlc.Instance("--no-video", "--quiet")
+        self.player = self.vlc_instance.media_player_new()
         self.player.audio_set_volume(80)
 
-        # PLAYLIST
-        self.playlist = []
-        self.current_index = -1
-
-        # UI
-        self.title = QLabel("No song selected")
+        # ===== UI =====
+        self.title = QLabel("Select a song")
         self.title.setAlignment(Qt.AlignCenter)
         self.title.setObjectName("title")
 
         self.add_btn = QPushButton("＋")
         self.add_btn.setObjectName("add")
 
-        self.back_btn = QPushButton("⏮")
         self.play_btn = QPushButton("▶")
         self.pause_btn = QPushButton("⏸")
         self.stop_btn = QPushButton("■")
-        self.next_btn = QPushButton("⏭")
 
-        # progress
         self.progress = QSlider(Qt.Horizontal)
         self.progress.setRange(0, 1000)
 
-        # volume
         self.volume = QSlider(Qt.Horizontal)
         self.volume.setRange(0, 100)
         self.volume.setValue(80)
@@ -52,7 +47,7 @@ class MusicPlayer(QWidget):
         vol_label = QLabel("Volume")
         vol_label.setObjectName("label")
 
-        # Layouts
+        # ===== LAYOUT =====
         top = QHBoxLayout()
         top.addStretch()
         top.addWidget(self.add_btn)
@@ -60,79 +55,63 @@ class MusicPlayer(QWidget):
         controls = QHBoxLayout()
         controls.setSpacing(20)
         controls.addStretch()
-        controls.addWidget(self.back_btn)
         controls.addWidget(self.play_btn)
         controls.addWidget(self.pause_btn)
         controls.addWidget(self.stop_btn)
-        controls.addWidget(self.next_btn)
         controls.addStretch()
 
         volume_layout = QHBoxLayout()
         volume_layout.addWidget(vol_label)
         volume_layout.addWidget(self.volume)
 
-        layout = QVBoxLayout()
-        layout.addLayout(top)
-        layout.addStretch()
-        layout.addWidget(self.title)
-        layout.addStretch()
-        layout.addWidget(self.progress)
-        layout.addLayout(controls)
-        layout.addLayout(volume_layout)
+        self.layout = QVBoxLayout()
+        self.layout.addLayout(top)
+        self.layout.addStretch()
+        self.layout.addWidget(self.title)
+        self.layout.addStretch()
+        self.layout.addWidget(self.progress)
+        self.layout.addLayout(controls)
+        self.layout.addLayout(volume_layout)
 
-        self.setLayout(layout)
+        self.setLayout(self.layout)
 
-        # Signals
-        self.add_btn.clicked.connect(self.add_files)
-        self.play_btn.clicked.connect(self.play)
+        # ===== SIGNALS =====
+        self.add_btn.clicked.connect(self.select_song)
+        self.play_btn.clicked.connect(self.player.play)
         self.pause_btn.clicked.connect(self.player.pause)
         self.stop_btn.clicked.connect(self.player.stop)
-        self.next_btn.clicked.connect(self.next_song)
-        self.back_btn.clicked.connect(self.prev_song)
         self.progress.sliderMoved.connect(self.set_position)
         self.volume.valueChanged.connect(self.set_volume)
 
-        # timer
+        # ===== TIMER =====
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_progress)
         self.timer.start(400)
 
-        # STYLE
+        # ===== STYLE =====
         self.setStyleSheet(style.stylesheet())
 
-    # ====== PLAYER LOGIC ======
+    # ================= LOGIC =================
 
-    def add_files(self):
-        files, _ = QFileDialog.getOpenFileNames(
-            self, "Select songs", "", "Audio (*.mp3 *.wav *.ogg *.flac)"
-        )
-        if files:
-            self.playlist.extend(files)
-            if self.current_index == -1:
-                self.current_index = 0
-                self.load_current()
+    def select_song(self):
+        dialog = QFileDialog(self)
+        dialog.setFileMode(QFileDialog.ExistingFile)
+        dialog.setNameFilter("Audio (*.mp3 *.wav *.ogg *.flac)")
+        dialog.setOption(QFileDialog.DontUseNativeDialog, True)
+        dialog.setFixedSize(800, 480)
 
-    def load_current(self):
-        if 0 <= self.current_index < len(self.playlist):
-            file = self.playlist[self.current_index]
-            media = self.instance.media_new(file)
-            self.player.set_media(media)
-            self.title.setText(os.path.basename(file))
-            self.player.play()
+        if dialog.exec_():
+            file = dialog.selectedFiles()[0]
+            self.load_song(file)
 
-    def play(self):
-        if not self.player.is_playing():
-            self.player.play()
+    def load_song(self, file):
+        media = self.vlc_instance.media_new(file)
+        self.player.set_media(media)
+        self.title.setText(os.path.basename(file))
+        self.player.play()
 
-    def next_song(self):
-        if self.current_index + 1 < len(self.playlist):
-            self.current_index += 1
-            self.load_current()
-
-    def prev_song(self):
-        if self.current_index > 0:
-            self.current_index -= 1
-            self.load_current()
+        # 🔴 schovej + tlačítko
+        self.add_btn.hide()
 
     def update_progress(self):
         if self.player.is_playing():
@@ -147,6 +126,8 @@ class MusicPlayer(QWidget):
     def set_volume(self, value):
         self.player.audio_set_volume(value)
 
+
+# ================= ENTRY =================
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
