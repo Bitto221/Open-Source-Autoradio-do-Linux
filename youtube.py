@@ -12,3 +12,5 @@ COMMAND = [
 ]
 
 app_run_or_focus(WINDOW_TITLE, COMMAND)
+# hotový kod
+# verze 3.31
