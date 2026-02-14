@@ -1,12 +1,7 @@
-# style.py
 from PyQt5.QtGui import QFont
 
 # BARVY
-BG = "#000000"
-CARD = "#1c1c28"
-PRIMARY = "#6a4df4"
-TEXT = "#ffffff"
-SUBTEXT = "#b0b0b0"
+MAIN_COLOR = "#6a4df4"
 
 # FONTY
 def title_font():
@@ -19,8 +14,8 @@ def normal_font():
 def stylesheet():
     return f"""
     QWidget {{
-        background-color: {BG};
-        color: {TEXT};
+        background-color: "#000000";
+        color: "#ffffff";
         font-family: Arial;
     }}
 
@@ -31,11 +26,11 @@ def stylesheet():
 
     QLabel#label {{
         font-size: 14px;
-        color: {SUBTEXT};
+        color: "#b0b0b0";
     }}
 
     QPushButton {{
-        background-color: {CARD};
+        background-color: "#1c1c28";
         border-radius: 28px;
         font-size: 22px;
         color: white;
@@ -44,11 +39,11 @@ def stylesheet():
     }}
 
     QPushButton:hover {{
-        background-color: {PRIMARY};
+        background-color: {MAIN_COLOR};
     }}
 
     QPushButton#add {{
-        background-color: {PRIMARY};
+        background-color: {MAIN_COLOR};
         font-size: 26px;
     }}
 
@@ -60,8 +55,14 @@ def stylesheet():
 
     QSlider::handle:horizontal {{
         width: 18px;
-        background: {PRIMARY};
+        background: {MAIN_COLOR};
         margin: -6px 0;
         border-radius: 9px;
+    }}
+    QPushButton#openfile{{
+        background-color: {MAIN_COLOR};
+        color: white;
+        border-radius: 20px;
+        font-size: 16px;
     }}
     """

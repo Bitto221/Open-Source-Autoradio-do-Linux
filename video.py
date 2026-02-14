@@ -1,36 +1,32 @@
 import sys
+import os
 import subprocess
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QPushButton, QFileDialog, QLabel, QVBoxLayout
 )
-from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
+import style
 
 class VideoPlayer(QWidget):
     def __init__(self):
         super().__init__()
+
+        # WINDOW
         self.setWindowTitle("Video Player")
         self.setFixedSize(800, 480)
-        self.setStyleSheet("background-color: #000000;")
+        self.setWindowFlags(Qt.Window)
 
         layout = QVBoxLayout()
         layout.setAlignment(Qt.AlignCenter)
 
+        # UI
         title = QLabel("Video přehrávač")
-        title.setFont(QFont("Arial", 34, QFont.Bold))
-        title.setStyleSheet("color: white;")
         title.setAlignment(Qt.AlignCenter)
+        title.setObjectName("title")
 
         self.btn = QPushButton("📁 Vybrat video")
         self.btn.setFixedSize(360, 80)
-        self.btn.setFont(QFont("Arial", 16))
-        self.btn.setStyleSheet("""
-            QPushButton {
-                background-color: #6a4df4;
-                color: white;
-                border-radius: 20px;
-            }
-        """)
+        self.btn.setObjectName("openfile")
         self.btn.clicked.connect(self.open_file)
 
         layout.addWidget(title)
@@ -39,6 +35,11 @@ class VideoPlayer(QWidget):
 
         self.setLayout(layout)
 
+        # STYLE
+        self.setStyleSheet(style.stylesheet())
+
+
+    # LOGIC
     def open_file(self):
         file_path, _ = QFileDialog.getOpenFileName(
             self,
@@ -53,6 +54,8 @@ class VideoPlayer(QWidget):
                 file_path
             ])
 
+
+# ENTRY
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = VideoPlayer()
