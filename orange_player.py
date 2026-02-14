@@ -15,17 +15,16 @@ class MusicPlayer(QWidget):
     def __init__(self):
         super().__init__()
 
-        # ===== WINDOW =====
-        self.setWindowTitle("Orange Player")
+        # WINDOW
+        self.setWindowTitle("Music Player")
         self.setFixedSize(800, 480)
         self.setWindowFlags(Qt.Window)
 
-        # ===== VLC =====
         self.vlc_instance = vlc.Instance("--no-video", "--quiet")
         self.player = self.vlc_instance.media_player_new()
         self.player.audio_set_volume(80)
 
-        # ===== UI =====
+        # UI
         self.title = QLabel("Select a song")
         self.title.setAlignment(Qt.AlignCenter)
         self.title.setObjectName("title")
@@ -47,7 +46,7 @@ class MusicPlayer(QWidget):
         vol_label = QLabel("Volume")
         vol_label.setObjectName("label")
 
-        # ===== LAYOUT =====
+        # LAYOUT
         top = QHBoxLayout()
         top.addStretch()
         top.addWidget(self.add_btn)
@@ -75,7 +74,7 @@ class MusicPlayer(QWidget):
 
         self.setLayout(self.layout)
 
-        # ===== SIGNALS =====
+        # SIGNALS
         self.add_btn.clicked.connect(self.select_song)
         self.play_btn.clicked.connect(self.player.play)
         self.pause_btn.clicked.connect(self.player.pause)
@@ -83,15 +82,15 @@ class MusicPlayer(QWidget):
         self.progress.sliderMoved.connect(self.set_position)
         self.volume.valueChanged.connect(self.set_volume)
 
-        # ===== TIMER =====
+        # TIMER
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_progress)
         self.timer.start(400)
 
-        # ===== STYLE =====
+        # STYLE
         self.setStyleSheet(style.stylesheet())
 
-    # ================= LOGIC =================
+    # LOGIC
 
     def select_song(self):
         dialog = QFileDialog(self)
@@ -110,7 +109,7 @@ class MusicPlayer(QWidget):
         self.title.setText(os.path.basename(file))
         self.player.play()
 
-        # 🔴 schovej + tlačítko
+        # schovej tlačítko add
         self.add_btn.hide()
 
     def update_progress(self):
@@ -127,10 +126,10 @@ class MusicPlayer(QWidget):
         self.player.audio_set_volume(value)
 
 
-# ================= ENTRY =================
-
+# ENTRY
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MusicPlayer()
     window.show()
     sys.exit(app.exec_())
+# je potřea dodelat app_louncher

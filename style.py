@@ -20,7 +20,7 @@ def stylesheet():
     }}
 
     QLabel#title {{
-        font-size: 36px;
+        font-size: 46px;
         font-weight: bold;
     }}
 
@@ -63,6 +63,6 @@ def stylesheet():
         background-color: {MAIN_COLOR};
         color: white;
         border-radius: 20px;
-        font-size: 16px;
+        font-size: 20px;
     }}
     """

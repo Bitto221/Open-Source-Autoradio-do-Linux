@@ -61,3 +61,4 @@ if __name__ == "__main__":
     window = VideoPlayer()
     window.show()
     sys.exit(app.exec_())
+# je potřea dodelat app_louncher

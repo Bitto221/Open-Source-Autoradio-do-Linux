@@ -21,7 +21,7 @@ APPS = [
     {"file": "video.py", "icon": "vlc.png"},
     {"file": "DUB.py", "icon": "dab.png"},
     {"file": "pocasi.py", "icon": "pocasi.png"},
-    {"file": "car.py", "icon": "car.png"},
+    {"file": "color.py", "icon": "color.png"},
 
     {"file": "settings.py", "icon": "settings.png"},
     {"file": "bluetooth.py", "icon": "bluetooth.png"},
