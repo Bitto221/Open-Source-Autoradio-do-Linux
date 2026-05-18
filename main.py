@@ -131,3 +131,6 @@ if __name__ == "__main__":
     launcher = Launcher()
     launcher.show()
     sys.exit(app.exec_())
+
+# hotový kod
+# verze 5.2
