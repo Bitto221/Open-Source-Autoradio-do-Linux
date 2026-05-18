@@ -13,19 +13,19 @@ ICON_PATH = os.path.join(BASE_DIR, "icons")
 BACKGROUND_PATH = os.path.join(BASE_DIR, "background.jpg")
 
 APPS = [
-    {"file": "orange_player.py", "icon": "orange_player.png"},
+    {"file": "music_player.py", "icon": "music_player.png"},
     {"file": "youtube.py", "icon": "youtube.png"},
-    {"file": "spotube.py", "icon": "spotube.png"},
     {"file": "youtube_music.py", "icon": "youtube_music.png"},
+    {"file": "FM_radio.py", "icon": "fm.png"},
 
     {"file": "video.py", "icon": "vlc.png"},
     {"file": "DUB.py", "icon": "dab.png"},
-    {"file": "pocasi.py", "icon": "pocasi.png"},
-    {"file": "color.py", "icon": "color.png"},
+    {"file": "weather.py", "icon": "weather.png"},
+    {"file": "web.py", "icon": "browser.png"},
 
     {"file": "settings.py", "icon": "settings.png"},
-    {"file": "bluetooth.py", "icon": "bluetooth.png"},
-    {"file": "FM_radio.py", "icon": "fm.png"},
+    {"file": "themes.py", "icon": "themes.png"},
+    {"file": "map.py", "icon": "map.png"},
     {"file": "navigation.py", "icon": "navigation.png"},
 ]
 
