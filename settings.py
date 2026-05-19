@@ -11,7 +11,7 @@ from PyQt5.QtGui import QFont
 class Settings(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Nastavení")
+        self.setWindowTitle("Settings")
         self.setFixedSize(800, 480)
         self.setStyleSheet("background-color: #000000; color: white;")
         self.init_ui()

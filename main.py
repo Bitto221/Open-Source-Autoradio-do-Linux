@@ -8,9 +8,12 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QIcon, QFont
 from PyQt5.QtCore import QSize, Qt, QTimer, QDateTime
 
+import style
+import app_launcher
+
 BASE_DIR = os.path.dirname(__file__)
 ICON_PATH = os.path.join(BASE_DIR, "icons")
-BACKGROUND_PATH = os.path.join(BASE_DIR, "background.jpg")
+WALLPAPER_DIR = os.path.join(BASE_DIR, "wallpapers")
 
 APPS = [
     {"file": "music_player.py", "icon": "music_player.png"},
@@ -19,7 +22,7 @@ APPS = [
     {"file": "FM_radio.py", "icon": "fm.png"},
 
     {"file": "video.py", "icon": "vlc.png"},
-    {"file": "DUB.py", "icon": "dab.png"},
+    {"file": "DAB.py", "icon": "dab.png"},
     {"file": "weather.py", "icon": "weather.png"},
     {"file": "web.py", "icon": "browser.png"},
 
@@ -39,7 +42,7 @@ class Launcher(QWidget):
 
         self.setStyleSheet(f"""
         QWidget#central {{
-            background-image: url("{BACKGROUND_PATH}");
+            background-image: url("{style.WALLPAPER}");
             background-repeat: no-repeat;
             background-position: center;
         }}
@@ -123,8 +126,34 @@ class Launcher(QWidget):
         self.time_label.setText(now.toString("HH:mm"))
 
     def launch_app(self, file):
-        subprocess.Popen([sys.executable, os.path.join(BASE_DIR, file)])
 
+        window_titles = {
+
+            "music_player.py": "Music Player",
+            "DAB.py": "DAB",
+            "themes.py": "Themes",
+            "youtube.py": "YouTube",
+            "youtube_music.py": "YouTube Music",
+            "video.py": "Video Player",
+            "weather.py": "Weather",
+            "FM_radio.py": "FM Radio",
+            "map.py": "Maps",
+            "settings.py": "Settings",
+            "web.py": "Web"
+
+        }
+
+        title = window_titles.get(file, file)
+
+        app_launcher.app_run_or_focus(
+
+            title,
+
+            [
+                sys.executable,
+                os.path.join(BASE_DIR, file)
+            ]
+    )
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

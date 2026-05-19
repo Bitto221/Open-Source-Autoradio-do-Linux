@@ -27,6 +27,7 @@ class WeatherApp(QWidget):
         self.setStyleSheet(f"background-color: {BG};")
         self.init_ui()
         self.load_weather()
+        self.setWindowTitle("Weather")
 
     def init_ui(self):
         main = QVBoxLayout()

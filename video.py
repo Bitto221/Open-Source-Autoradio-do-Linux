@@ -16,6 +16,8 @@ class VideoPlayer(QWidget):
         self.setFixedSize(800, 480)
         self.setWindowFlags(Qt.Window)
 
+        self.setObjectName("mainWindow")
+
         layout = QVBoxLayout()
         layout.setAlignment(Qt.AlignCenter)
 
@@ -61,4 +63,5 @@ if __name__ == "__main__":
     window = VideoPlayer()
     window.show()
     sys.exit(app.exec_())
-# je potřea dodelat app_louncher
+# htový kod
+# verze 5.5

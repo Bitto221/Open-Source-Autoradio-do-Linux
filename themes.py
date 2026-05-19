@@ -1,53 +1,143 @@
 import sys
 import os
+import subprocess
+
 from PyQt5.QtWidgets import (
-    QApplication, QWidget, QPushButton, QLabel,
-    QFileDialog, QSlider, QHBoxLayout, QVBoxLayout
+    QApplication,
+    QWidget,
+    QPushButton,
+    QVBoxLayout,
+    QLabel
 )
+
 from PyQt5.QtCore import Qt
 
 import style
 
-class CarSettings(QWidget):
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+class ThemeSelector(QWidget):
+
     def __init__(self):
         super().__init__()
 
-        # UI
-        self.setWindowTitle("Colors") 
+        self.setWindowTitle("Themes")
         self.setFixedSize(800, 480)
 
-        self.title = QLabel("Barvy")
-        self.title.setAlignment(Qt.AlignCenter)
-        self.title.setObjectName("title")
+        self.setObjectName("mainWindow")
 
-        self.color1_btn = QPushButton("Modrá")
-        self.color2_btn = QPushButton("Fialová")
-        self.color3_btn = QPushButton("Červená")
-        self.color4_btn = QPushButton("Zelená")
+        self.setStyleSheet(style.stylesheet())
 
-        # Layout
-        controls = QHBoxLayout()
-        controls.setSpacing(20)
-        controls.addStretch()
-        controls.addWidget(self.color1_btn)
-        controls.addWidget(self.color2_btn)
-        controls.addWidget(self.color3_btn)
-        controls.addWidget(self.color4_btn)
-        controls.addStretch()
+        title = QLabel("Select Theme")
+        title.setObjectName("title")
+        title.setAlignment(Qt.AlignCenter)
 
         layout = QVBoxLayout()
-        layout.addWidget(self.title)
-        layout.addStretch()
-        layout.addLayout(controls)
+
+        layout.addWidget(title)
+
+        # ===== TÉMATA =====
+
+        themes = {
+
+            "Purple": (
+                "#6a4df4",
+                "purple.jpg"
+            ),
+
+            "Red": (
+                "#ff0033",
+                "red.jpg"
+            ),
+
+            "Blue": (
+                "#0099ff",
+                "blue.jpg"
+            ),
+
+            "Green": (
+                "#00cc66",
+                "green.jpg"
+            ),
+
+            "Orange": (
+                "#ff8800",
+                "orange.jpg"
+            ),
+
+            "Pink": (
+                "#ff00aa",
+                "pink.jpg"
+            )
+        }
+
+        for name, data in themes.items():
+
+            color = data[0]
+
+            wallpaper = os.path.join(
+                style.WALLPAPER_DIR,
+                data[1]
+            )
+
+            btn = QPushButton(name)
+
+            btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {color};
+                color: white;
+                border-radius: 20px;
+                font-size: 24px;
+                padding: 18px;
+            }}
+            """)
+
+            btn.clicked.connect(
+
+                lambda checked,
+                c=color,
+                w=wallpaper:
+
+                self.select_theme(c, w)
+            )
+
+            layout.addWidget(btn)
 
         self.setLayout(layout)
 
+    # ===== ZMĚNA TÉMATU =====
 
-        # STYLE
-        self.setStyleSheet(style.stylesheet())
+    def select_theme(self, color, wallpaper):
+
+        # uloží nové téma
+        style.save_theme(color, wallpaper)
+
+        # zavře starý launcher
+        subprocess.run([
+            "pkill",
+            "-f",
+            "main.py"
+        ])
+
+        # znovu spustí launcher
+        subprocess.Popen([
+            sys.executable,
+            os.path.join(BASE_DIR, "main.py")
+        ])
+
+        # zavře themes okno
+        QApplication.quit()
+
+
+# ===== START =====
 
 if __name__ == "__main__":
+
     app = QApplication(sys.argv)
-    window = CarSettings()
+
+    window = ThemeSelector()
     window.show()
+
     sys.exit(app.exec_())

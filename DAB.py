@@ -14,6 +14,8 @@ class DUB(QWidget):
         self.setWindowTitle("DAB") 
         self.setFixedSize(800, 480)
 
+        self.setObjectName("mainWindow")
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

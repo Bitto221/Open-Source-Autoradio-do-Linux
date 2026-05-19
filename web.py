@@ -1,6 +1,6 @@
 from app_launcher import app_run_or_focus
 
-WINDOW_TITLE = "YouTube Music"
+WINDOW_TITLE = "Web"
 
 COMMAND = [
     "chromium-browser",
@@ -12,4 +12,4 @@ COMMAND = [
 
 app_run_or_focus(WINDOW_TITLE, COMMAND)
 # hotový kod
-# verze 1
+# verze 1.1

@@ -10,7 +10,6 @@ from PyQt5.QtCore import Qt, QTimer
 
 import style
 
-
 class MusicPlayer(QWidget):
     def __init__(self):
         super().__init__()
@@ -19,6 +18,8 @@ class MusicPlayer(QWidget):
         self.setWindowTitle("Music Player")
         self.setFixedSize(800, 480)
         self.setWindowFlags(Qt.Window)
+
+        self.setObjectName("mainWindow")
 
         self.vlc_instance = vlc.Instance("--no-video", "--quiet")
         self.player = self.vlc_instance.media_player_new()
@@ -39,13 +40,6 @@ class MusicPlayer(QWidget):
         self.progress = QSlider(Qt.Horizontal)
         self.progress.setRange(0, 1000)
 
-        self.volume = QSlider(Qt.Horizontal)
-        self.volume.setRange(0, 100)
-        self.volume.setValue(80)
-
-        vol_label = QLabel("Volume")
-        vol_label.setObjectName("label")
-
         # LAYOUT
         top = QHBoxLayout()
         top.addStretch()
@@ -59,10 +53,6 @@ class MusicPlayer(QWidget):
         controls.addWidget(self.stop_btn)
         controls.addStretch()
 
-        volume_layout = QHBoxLayout()
-        volume_layout.addWidget(vol_label)
-        volume_layout.addWidget(self.volume)
-
         self.layout = QVBoxLayout()
         self.layout.addLayout(top)
         self.layout.addStretch()
@@ -70,7 +60,6 @@ class MusicPlayer(QWidget):
         self.layout.addStretch()
         self.layout.addWidget(self.progress)
         self.layout.addLayout(controls)
-        self.layout.addLayout(volume_layout)
 
         self.setLayout(self.layout)
 
@@ -80,7 +69,6 @@ class MusicPlayer(QWidget):
         self.pause_btn.clicked.connect(self.player.pause)
         self.stop_btn.clicked.connect(self.player.stop)
         self.progress.sliderMoved.connect(self.set_position)
-        self.volume.valueChanged.connect(self.set_volume)
 
         # TIMER
         self.timer = QTimer(self)
@@ -91,7 +79,6 @@ class MusicPlayer(QWidget):
         self.setStyleSheet(style.stylesheet())
 
     # LOGIC
-
     def select_song(self):
         dialog = QFileDialog(self)
         dialog.setFileMode(QFileDialog.ExistingFile)
@@ -122,8 +109,6 @@ class MusicPlayer(QWidget):
     def set_position(self, value):
         self.player.set_position(value / 1000)
 
-    def set_volume(self, value):
-        self.player.audio_set_volume(value)
 
 
 # ENTRY
@@ -132,4 +117,5 @@ if __name__ == "__main__":
     window = MusicPlayer()
     window.show()
     sys.exit(app.exec_())
-# je potřea dodelat app_louncher
+# hotový kod 
+# verze 7.3

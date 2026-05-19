@@ -13,6 +13,8 @@ class FmRadio(QWidget):
         self.setWindowTitle("FM Radio")
         self.setFixedSize(800, 480)
 
+        self.setObjectName("mainWindow")
+
         self.process = None
         self.audio = None
         self.freq = 100.2
