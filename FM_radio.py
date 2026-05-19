@@ -7,11 +7,14 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt
 
+import style
+
 class FmRadio(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("FM Radio")
         self.setFixedSize(800, 480)
+        self.setWindowFlags(Qt.Window)
 
         self.setObjectName("mainWindow")
 
@@ -22,7 +25,7 @@ class FmRadio(QWidget):
         # UI
         self.label = QLabel(f"{self.freq} MHz")
         self.label.setAlignment(Qt.AlignCenter)
-        self.label.setStyleSheet("font-size: 30px; font-weight: bold;")
+        self.label.setObjectName("title")
 
         self.slider = QSlider(Qt.Horizontal)
         self.slider.setRange(880, 1080)
@@ -41,6 +44,8 @@ class FmRadio(QWidget):
         layout.addWidget(self.play_btn)
         layout.addWidget(self.stop_btn)
         self.setLayout(layout)
+
+        self.setStyleSheet(style.stylesheet())
 
     def start_radio(self):
         self.stop_radio() # Vždy nejdřív zastavíme starý proces
@@ -98,3 +103,5 @@ if __name__ == "__main__":
     w = FmRadio()
     w.show()
     sys.exit(app.exec_())
+# připravený hod na test
+# verze 6.34

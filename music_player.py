@@ -23,7 +23,7 @@ class MusicPlayer(QWidget):
 
         self.vlc_instance = vlc.Instance("--no-video", "--quiet")
         self.player = self.vlc_instance.media_player_new()
-        self.player.audio_set_volume(80)
+        self.player.audio_set_volume(100)
 
         # UI
         self.title = QLabel("Select a song")
