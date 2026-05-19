@@ -46,3 +46,15 @@ sudo apt install bluez blueman
 sudo apt install brightnessctl
 
 sudo apt install dbus-x11
+
+sudo apt update
+sudo apt install osrm-backend -y
+
+sudo apt update
+sudo apt install docker.io -y
+sudo systemctl start docker
+sudo systemctl enable docker
+sudo usermod -aG docker $USER  # aby šel Docker spustit bez sudo
+
+mkdir ~/osrm-data && cd ~/osrm-data
+wget https://download.geofabrik.de/europe/czech-republic-latest.osm.pbf

@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NavCZ</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:       #0f1117;
+      --surface:  #181c27;
+      --surface2: #1e2436;
+      --border:   #2a2f45;
+      --accent:   #3b82f6;
+      --accent-h: #60a5fa;
+      --green:    #22c55e;
+      --red:      #ef4444;
+      --text:     #e2e8f0;
+      --muted:    #64748b;
+      --route:    #3b82f6;
+      --radius:   10px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
+
+    /* ── LAYOUT ── */
+    .app { display: grid; grid-template-rows: 56px 1fr; height: 100vh; }
+    .main { display: grid; grid-template-columns: 1fr 320px; overflow: hidden; }
+
+    /* ── TOPBAR ── */
+    .topbar {
+      display: flex; align-items: center; gap: 12px;
+      padding: 0 16px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      z-index: 500;
+    }
+
+    .logo {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700; font-size: 1rem;
+      color: var(--accent); letter-spacing: 0.05em;
+      white-space: nowrap; flex-shrink: 0;
+    }
+
+    .inputs { display: flex; gap: 8px; flex: 1; min-width: 0; }
+
+    .field {
+      flex: 1; min-width: 0; position: relative;
+      display: flex; align-items: center;
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 0 10px; gap: 6px;
+      transition: border-color .15s;
+    }
+    .field:focus-within { border-color: var(--accent); }
+    .field-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .field-dot.s { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .field-dot.e { background: var(--red);   box-shadow: 0 0 6px var(--red); }
+    .field input {
+      flex: 1; background: transparent; border: none; outline: none;
+      color: var(--text); font-family: inherit; font-size: .8rem;
+      min-width: 0;
+    }
+    .field input::placeholder { color: var(--muted); }
+
+    .actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+    .btn {
+      display: flex; align-items: center; gap: 5px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 600; font-size: .78rem;
+      padding: 0 14px; height: 34px;
+      border-radius: var(--radius); border: none;
+      cursor: pointer; transition: all .15s; white-space: nowrap;
+    }
+    .btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-h); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(59,130,246,.4); }
+    .btn-primary:active { transform: translateY(0); }
+
+    .btn-ghost { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+    .btn-ghost:hover { color: var(--text); border-color: var(--accent); }
+    .btn-ghost.active { color: var(--accent); border-color: var(--accent); background: rgba(59,130,246,.08); }
+
+    /* ── MAP ── */
+    #map { width: 100%; height: 100%; }
+    .leaflet-tile { filter: invert(1) hue-rotate(180deg) brightness(.9) contrast(1.05) saturate(.8); }
+    .leaflet-control-zoom { border: 1px solid var(--border) !important; border-radius: var(--radius) !important; overflow: hidden; }
+    .leaflet-control-zoom a { background: var(--surface) !important; color: var(--text) !important; border-color: var(--border) !important; }
+    .leaflet-control-zoom a:hover { background: var(--surface2) !important; }
+    .leaflet-control-attribution { background: rgba(15,17,23,.7) !important; color: var(--muted) !important; font-size: .6rem !important; }
+    .leaflet-control-attribution a { color: var(--accent) !important; }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      display: flex; flex-direction: column;
+      background: var(--surface); border-left: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    /* Stats */
+    .stats {
+      display: none; grid-template-columns: 1fr 1fr;
+      border-bottom: 1px solid var(--border);
+    }
+    .stat {
+      padding: 14px 16px; display: flex; flex-direction: column; gap: 2px;
+      border-right: 1px solid var(--border);
+    }
+    .stat:last-child { border-right: none; }
+    .stat-label { font-size: .6rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+    .stat-val { font-family: 'Space Grotesk', sans-serif; font-size: 1.5rem; font-weight: 700; color: var(--accent); line-height: 1; }
+    .stat-unit { font-size: .65rem; color: var(--muted); margin-top: 1px; }
+
+    /* Steps */
+    .steps-wrap { flex: 1; overflow-y: auto; }
+    .steps-wrap::-webkit-scrollbar { width: 3px; }
+    .steps-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .step {
+      display: flex; gap: 10px; padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      align-items: flex-start;
+      animation: slideIn .2s ease both;
+      cursor: default;
+      transition: background .12s;
+    }
+    .step:hover { background: rgba(59,130,246,.05); }
+    @keyframes slideIn { from { opacity:0; transform:translateX(8px); } to { opacity:1; transform:translateX(0); } }
+
+    .step-ic {
+      width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--surface2); font-size: .85rem;
+    }
+    .step-ic.s { background: rgba(34,197,94,.12); }
+    .step-ic.e { background: rgba(239,68,68,.12); }
+
+    .step-body { flex: 1; min-width: 0; padding-top: 1px; }
+    .step-name { font-size: .78rem; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .step-dist { font-size: .65rem; color: var(--muted); margin-top: 2px; }
+
+    /* Empty */
+    .empty {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 10px; padding: 30px; text-align: center;
+      color: var(--muted);
+    }
+    .empty-icon { font-size: 2.4rem; opacity: .25; }
+    .empty-text { font-size: .72rem; line-height: 1.7; }
+
+    /* Status */
+    .statusbar {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 14px; border-top: 1px solid var(--border);
+      font-size: .62rem; color: var(--muted); letter-spacing: .04em;
+    }
+    .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; background: var(--green); }
+    .dot.err  { background: var(--red); }
+    .dot.spin { background: var(--accent); animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.25} }
+
+    /* Pick hint */
+    .pick-bar {
+      display: none; align-items: center; gap: 6px;
+      background: rgba(59,130,246,.08);
+      border: 1px solid rgba(59,130,246,.3);
+      border-radius: 8px; padding: 4px 10px;
+      font-size: .68rem; color: var(--accent); white-space: nowrap;
+    }
+    .pick-bar.on { display: flex; }
+
+    /* Markers */
+    .mk { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--bg); }
+    .mk.s { background: var(--green); box-shadow: 0 0 8px var(--green); }
+    .mk.e { background: var(--red);   box-shadow: 0 0 8px var(--red); }
+
+    @media (max-width: 700px) {
+      .main { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="logo">NAV·CZ</div>
+
+    <div class="inputs">
+      <div class="field">
+        <div class="field-dot s"></div>
+        <input id="inS" type="text" placeholder="Start  50.0755, 14.4378"/>
+      </div>
+      <div class="field">
+        <div class="field-dot e"></div>
+        <input id="inE" type="text" placeholder="Cíl  49.1951, 16.6068"/>
+      </div>
+    </div>
+
+    <div id="pickBar" class="pick-bar">
+      <span id="pickTxt">Klikni na mapu</span>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-ghost" id="btnPS">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+        Start
+      </button>
+      <button class="btn btn-ghost" id="btnPE">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+        Cíl
+      </button>
+      <button class="btn btn-primary" id="btnGo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Naviguj
+      </button>
+      <button class="btn btn-ghost" id="btnClr">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="main">
+    <div id="map"></div>
+
+    <aside class="sidebar">
+      <div class="stats" id="stats">
+        <div class="stat">
+          <div class="stat-label">Vzdálenost</div>
+          <div class="stat-val" id="sDist">—</div>
+          <div class="stat-unit">km</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Čas jízdy</div>
+          <div class="stat-val" id="sTime">—</div>
+          <div class="stat-unit" id="sUnit">min</div>
+        </div>
+      </div>
+
+      <div class="steps-wrap" id="steps">
+        <div class="empty">
+          <div class="empty-icon">🗺</div>
+          <div class="empty-text">Zadej souřadnice nebo<br>klikni <strong>Start</strong> / <strong>Cíl</strong><br>a pak stiskni <strong>Naviguj</strong></div>
+        </div>
+      </div>
+
+      <div class="statusbar">
+        <div class="dot" id="dot"></div>
+        <span id="stTxt">Připojeno · OSRM :5000</span>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+  const BASE = window.location.protocol === 'file:' ? null : '/osrm';
+  if (!BASE) {
+    document.getElementById('stTxt').textContent = '⚠ Spusť python3 navigace.py';
+    document.getElementById('dot').className = 'dot err';
+  }
+
+  const map = L.map('map').setView([49.8, 15.5], 8);
+  L.tileLayer('/tiles/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors', maxZoom: 19,
+  }).addTo(map);
+
+  let mS=null, mE=null, route=null, pick=null;
+
+  const mkIcon = cls => L.divIcon({ className:'', html:`<div class="mk ${cls}"></div>`, iconSize:[12,12], iconAnchor:[6,6] });
+  const $ = id => document.getElementById(id);
+
+  function setStatus(msg, t='ok') {
+    $('stTxt').textContent = msg;
+    $('dot').className = 'dot'+(t==='err'?' err':t==='spin'?' spin':'');
+  }
+
+  function parseCoord(s) {
+    const p = s.trim().split(/[\s,;]+/);
+    if (p.length < 2) return null;
+    const lat=parseFloat(p[0]), lng=parseFloat(p[1]);
+    return isNaN(lat)||isNaN(lng) ? null : {lat,lng};
+  }
+
+  function fmtDist(m) { return m>=1000?(m/1000).toFixed(1)+' km':Math.round(m)+' m'; }
+  function fmtTime(s) { const h=Math.floor(s/3600),m=Math.ceil((s%3600)/60); return h?`${h}h ${m}`:`${m}`; }
+  const arrows = {'uturn':'↩','sharp right':'↱','right':'→','slight right':'↗','straight':'↑','slight left':'↖','left':'←','sharp left':'↰','roundabout':'↻'};
+  const arrow = mod => arrows[mod]||'↑';
+
+  function placeS(ll) {
+    if(mS) map.removeLayer(mS);
+    mS=L.marker(ll,{icon:mkIcon('s'),draggable:true}).addTo(map);
+    mS.on('dragend',()=>{const l=mS.getLatLng();$('inS').value=`${l.lat.toFixed(5)}, ${l.lng.toFixed(5)}`;});
+    $('inS').value=`${ll.lat.toFixed(5)}, ${ll.lng.toFixed(5)}`;
+  }
+  function placeE(ll) {
+    if(mE) map.removeLayer(mE);
+    mE=L.marker(ll,{icon:mkIcon('e'),draggable:true}).addTo(map);
+    mE.on('dragend',()=>{const l=mE.getLatLng();$('inE').value=`${l.lat.toFixed(5)}, ${l.lng.toFixed(5)}`;});
+    $('inE').value=`${ll.lat.toFixed(5)}, ${ll.lng.toFixed(5)}`;
+  }
+
+  function setPick(mode) {
+    pick=mode;
+    const bar=$('pickBar');
+    if(mode){
+      $('pickTxt').textContent = mode==='s'?'📍 Klikni na mapu – START':'🏁 Klikni na mapu – CÍL';
+      bar.classList.add('on');
+      map.getContainer().style.cursor='crosshair';
+      $('btnPS').classList.toggle('active',mode==='s');
+      $('btnPE').classList.toggle('active',mode==='e');
+    } else {
+      bar.classList.remove('on');
+      map.getContainer().style.cursor='';
+      $('btnPS').classList.remove('active');
+      $('btnPE').classList.remove('active');
+    }
+  }
+
+  $('btnPS').onclick=()=>setPick(pick==='s'?null:'s');
+  $('btnPE').onclick=()=>setPick(pick==='e'?null:'e');
+  map.on('click',e=>{ if(!pick)return; pick==='s'?placeS(e.latlng):placeE(e.latlng); setPick(null); });
+
+  $('btnGo').onclick=async()=>{
+    if(!BASE){ setStatus('Spusť python3 navigace.py','err'); return; }
+    let sLL=mS?mS.getLatLng():parseCoord($('inS').value);
+    let eLL=mE?mE.getLatLng():parseCoord($('inE').value);
+    if(!sLL){setStatus('Neplatný start','err');return;}
+    if(!eLL){setStatus('Neplatný cíl','err');return;}
+    placeS(sLL); placeE(eLL);
+    setStatus('Hledám trasu…','spin');
+    try {
+      const url=`${BASE}/route/v1/driving/${sLL.lng},${sLL.lat};${eLL.lng},${eLL.lat}?overview=full&geometries=geojson&steps=true`;
+      const data=await fetch(url).then(r=>r.json());
+      if(data.code!=='Ok'||!data.routes.length){setStatus('Trasa nenalezena','err');return;}
+      const r=data.routes[0];
+      if(route) map.removeLayer(route);
+      route=L.geoJSON(r.geometry,{
+        style:{color:'#3b82f6',weight:5,opacity:.9,lineCap:'round',lineJoin:'round'}
+      }).addTo(map);
+
+      // Glowing outline
+      L.geoJSON(r.geometry,{
+        style:{color:'#60a5fa',weight:9,opacity:.2,lineCap:'round',lineJoin:'round'}
+      }).addTo(map);
+
+      map.fitBounds(route.getBounds(),{padding:[50,50]});
+
+      $('sDist').textContent=(r.distance/1000).toFixed(1);
+      $('sTime').textContent=fmtTime(r.duration);
+      $('sUnit').textContent=r.duration>=3600?'hod':'min';
+      $('stats').style.display='grid';
+
+      const box=$('steps'); box.innerHTML='';
+      const mk=(ic,cls,name,sub,delay=0)=>{
+        const d=document.createElement('div'); d.className='step'; d.style.animationDelay=`${delay}s`;
+        d.innerHTML=`<div class="step-ic ${cls}">${ic}</div><div class="step-body"><div class="step-name">${name}</div><div class="step-dist">${sub}</div></div>`;
+        box.appendChild(d);
+      };
+      mk('▶','s','Start',`${sLL.lat.toFixed(4)}, ${sLL.lng.toFixed(4)}`);
+      r.legs.forEach(leg=>leg.steps.forEach((step,i)=>{
+        if(i===leg.steps.length-1)return;
+        mk(arrow(step.maneuver?.modifier||'straight'),'',step.name||'(bez názvu)',fmtDist(step.distance),i*.025);
+      }));
+      mk('■','e','Cíl',`${eLL.lat.toFixed(4)}, ${eLL.lng.toFixed(4)}`);
+
+      setStatus(`${(r.distance/1000).toFixed(1)} km · ${fmtTime(r.duration)} ${r.duration>=3600?'hod':'min'}`);
+    } catch(e){ setStatus('Chyba spojení s OSRM','err'); console.error(e); }
+  };
+
+  $('btnClr').onclick=()=>{
+    [mS,mE,route].forEach(l=>l&&map.removeLayer(l)); mS=mE=route=null;
+    $('inS').value=''; $('inE').value='';
+    $('stats').style.display='none';
+    $('steps').innerHTML='<div class="empty"><div class="empty-icon">🗺</div><div class="empty-text">Zadej souřadnice nebo<br>klikni <strong>Start</strong> / <strong>Cíl</strong><br>a pak stiskni <strong>Naviguj</strong></div></div>';
+    setStatus('Připojeno · OSRM :5000');
+    setPick(null);
+  };
+</script>
+</body>
+</html>

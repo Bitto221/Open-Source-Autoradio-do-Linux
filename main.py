@@ -29,7 +29,7 @@ APPS = [
     {"file": "settings.py", "icon": "settings.png"},
     {"file": "themes.py", "icon": "themes.png"},
     {"file": "map.py", "icon": "map.png"},
-    {"file": "navigation.py", "icon": "navigation.png"},
+    {"file": "navigace.py", "icon": "navigation.png"},
 ]
 
 
