@@ -101,8 +101,49 @@ def stylesheet():
     QWidget#mainWindow {{
 
         background-color: black;
-
         border-image: url("{WALLPAPER}") 0 0 0 0 stretch stretch;
+        color: white;
+
+    }}
+
+    QLabel {{
+
+        color: white;
+        background: transparent;
+
+    }}
+
+    QGroupBox {{
+
+        color: white;
+        font-size: 18px;
+        font-weight: bold;
+        border: 2px solid rgba(255,255,255,40);
+        border-radius: 16px;
+        margin-top: 12px;
+        padding-top: 16px;
+        background-color: rgba(0,0,0,120);
+
+    }}
+
+    QGroupBox::title {{
+        subcontrol-origin: margin;
+        left: 14px;
+        padding: 0 6px 0 6px;
+        color: white;
+    }}
+    QCheckBox {{
+        color: white;
+        background: transparent;
+        font-size: 18px;
+
+    }}
+
+    QComboBox {{
+        color: white;
+        background-color: #1c1c28;
+        border-radius: 10px;
+        padding: 6px;
 
     }}
 
@@ -115,7 +156,7 @@ def stylesheet():
 
     QLabel#label {{
         font-size: 14px;
-        color: #b0b0b0;
+        color: white;
         background: transparent;
     }}
 

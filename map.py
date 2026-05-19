@@ -78,3 +78,6 @@ window = Maps()
 window.show()
 
 sys.exit(app.exec_())
+
+# hotový kod
+# verze 1.2

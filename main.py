@@ -131,6 +131,7 @@ class Launcher(QWidget):
 
             "music_player.py": "Music Player",
             "DAB.py": "DAB",
+            "web.py": "Web",
             "themes.py": "Themes",
             "youtube.py": "YouTube",
             "youtube_music.py": "YouTube Music",
@@ -139,7 +140,7 @@ class Launcher(QWidget):
             "FM_radio.py": "FM Radio",
             "map.py": "Maps",
             "settings.py": "Settings",
-            "web.py": "Web"
+            "navigation.py": "Navigation"
 
         }
 

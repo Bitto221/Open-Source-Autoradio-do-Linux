@@ -1,11 +1,14 @@
 import sys
 import subprocess
+import shutil
+
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QLabel, QPushButton,
-    QVBoxLayout, QHBoxLayout, QSlider, QGroupBox
+    QVBoxLayout, QSlider, QGroupBox
 )
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont
+
+import style
 
 
 class Settings(QWidget):
@@ -13,43 +16,63 @@ class Settings(QWidget):
         super().__init__()
         self.setWindowTitle("Settings")
         self.setFixedSize(800, 480)
-        self.setStyleSheet("background-color: #000000; color: white;")
+        self.setObjectName("mainWindow")
+        self.setStyleSheet(style.stylesheet())
         self.init_ui()
 
     def init_ui(self):
         main = QVBoxLayout()
 
         title = QLabel("Nastavení systému")
-        title.setFont(QFont("Arial", 22))
         title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet("color: #a855f7;")
+        title.setObjectName("title")
         main.addWidget(title)
 
         main.addWidget(self.wifi_section())
         main.addWidget(self.bluetooth_section())
         main.addWidget(self.audio_section())
-        main.addWidget(self.brightness_section())
+        main.addWidget(self.system_section())
+
         self.setLayout(main)
+
+    # ---------------- SECTION BUILDER ----------------
+    def section_box(self, title):
+        box = QGroupBox(title)
+        layout = QVBoxLayout()
+        box.setLayout(layout)
+        return box
 
     # ---------------- WIFI ----------------
     def wifi_section(self):
         box = self.section_box("Wi-Fi")
 
         btn = QPushButton("Otevřít nastavení Wi-Fi")
-        btn.clicked.connect(lambda: self.open_settings("wifi"))
-        box.layout().addWidget(btn)
+        btn.clicked.connect(self.open_wifi_settings)
 
+        box.layout().addWidget(btn)
         return box
+
+    def open_wifi_settings(self):
+        if shutil.which("nm-connection-editor"):
+            subprocess.Popen(["nm-connection-editor"])
+        else:
+            print("Chybí nm-connection-editor (sudo apt install network-manager-gnome)")
 
     # ---------------- BLUETOOTH ----------------
     def bluetooth_section(self):
         box = self.section_box("Bluetooth")
 
         btn = QPushButton("Otevřít nastavení Bluetooth")
-        btn.clicked.connect(lambda: self.open_settings("bluetooth"))
-        box.layout().addWidget(btn)
+        btn.clicked.connect(self.open_bluetooth_settings)
 
+        box.layout().addWidget(btn)
         return box
+
+    def open_bluetooth_settings(self):
+        if shutil.which("blueman-manager"):
+            subprocess.Popen(["blueman-manager"])
+        else:
+            print("Chybí blueman (sudo apt install blueman)")
 
     # ---------------- AUDIO ----------------
     def audio_section(self):
@@ -61,60 +84,30 @@ class Settings(QWidget):
         volume.valueChanged.connect(self.set_volume)
 
         box.layout().addWidget(volume)
-
         return box
-
-    # ---------------- BRIGHTNESS ----------------
-    def brightness_section(self):
-        box = self.section_box("Jas displeje")
-
-        bright = QSlider(Qt.Horizontal)
-        bright.setRange(10, 100)
-        bright.setValue(80)
-        bright.valueChanged.connect(self.set_brightness)
-
-        box.layout().addWidget(bright)
-        return box
-
-    # ---------------- HELPERS ----------------
-    def section_box(self, title):
-        box = QGroupBox(title)
-        box.setFont(QFont("Arial", 14))
-        box.setStyleSheet("""
-            QGroupBox {
-                border: 1px solid #333;
-                border-radius: 12px;
-                margin-top: 10px;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                subcontrol-position: top left;
-                padding: 5px 10px;
-                color: #a855f7;
-            }
-        """)
-        layout = QVBoxLayout()
-        box.setLayout(layout)
-        return box
-
-    def open_settings(self, section):
-        try:
-            if section == "wifi":
-                subprocess.Popen(["gnome-control-center", "wifi"])
-            elif section == "bluetooth":
-                subprocess.Popen(["gnome-control-center", "bluetooth"])
-        except:
-            pass
 
     def set_volume(self, value):
-        subprocess.Popen(["pactl", "set-sink-volume", "@DEFAULT_SINK@", f"{value}%"])
+        if shutil.which("pactl"):
+            subprocess.Popen([
+                "pactl", "set-sink-volume",
+                "@DEFAULT_SINK@", f"{value}%"
+            ])
+        else:
+            print("Chybí pactl (pulseaudio-utils nebo pipewire-pulse)")
 
-    def set_brightness(self, value):
-        try:
-            subprocess.Popen(["brightnessctl", "set", f"{value}%"])
-        except:
-            pass
+    # ---------------- SYSTEM ----------------
+    def system_section(self):
+        box = self.section_box("Systém")
 
+        btn = QPushButton("Go to Linux")
+        btn.clicked.connect(self.go_to_linux)
+
+        box.layout().addWidget(btn)
+        return box
+
+    # ---------------- EXIT MAIN APP ----------------
+    def go_to_linux(self):
+        subprocess.Popen(["pkill", "-f", "main.py"])
 
 
 if __name__ == "__main__":

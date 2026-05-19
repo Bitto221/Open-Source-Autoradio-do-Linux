@@ -39,4 +39,10 @@ pulseaudio \
 brightnessctl
 
 python3-pyqt5.qtwebengine
-navit
+welle.io
+sudo apt install gnome-control-center
+sudo apt install network-manager network-manager-gnome
+sudo apt install bluez blueman
+sudo apt install brightnessctl
+
+sudo apt install dbus-x11
