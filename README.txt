@@ -47,10 +47,8 @@ sudo apt install brightnessctl
 
 sudo apt install dbus-x11
 
-sudo apt update
 sudo apt install osrm-backend -y
 
-sudo apt update
 sudo apt install docker.io -y
 sudo systemctl start docker
 sudo systemctl enable docker
