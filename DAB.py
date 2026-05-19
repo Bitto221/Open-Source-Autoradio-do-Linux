@@ -1,24 +1,8 @@
-import sys
-import os
-from PyQt5.QtWidgets import (
-    QApplication, QWidget, QPushButton, QLabel,
-    QFileDialog, QSlider, QHBoxLayout, QVBoxLayout
-)
-from PyQt5.QtCore import Qt
+import subprocess
 
-class DUB(QWidget):
-    def __init__(self):
-        super().__init__()
+subprocess.Popen([
+    "welle-io"
+])
 
-        # UI
-        self.setWindowTitle("DAB") 
-        self.setFixedSize(800, 480)
-
-        self.setObjectName("mainWindow")
-
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = DUB()
-    window.show()
-    sys.exit(app.exec_())
+# hotový kod
+# verze 2
