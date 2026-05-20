@@ -18,7 +18,7 @@ from PyQt5.QtCore import Qt
 import style
 
 
-API_KEY = "TVUJ_API_KLIC"
+API_KEY = "4e51d8b7ce09f005478ff9f2fe9411c0"
 CITY = "Prague"
 
 CACHE_FILE = "weather_cache.json"

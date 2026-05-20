@@ -3,7 +3,7 @@ cd "/home/orangepi/Documents/Projekt 4.B/"
 python3 main.py
 
 Notebook
-cd "/home/linusmisa/Projekty/Projekt 4.B/"
+cd /home/linusmisa/Projekty/Autoradio/
 python3 main.py
 
 
