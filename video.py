@@ -11,7 +11,6 @@ class VideoPlayer(QWidget):
     def __init__(self):
         super().__init__()
 
-        # WINDOW
         self.setWindowTitle("Video Player")
         self.setFixedSize(800, 480)
         self.setWindowFlags(Qt.Window)
@@ -21,7 +20,6 @@ class VideoPlayer(QWidget):
         layout = QVBoxLayout()
         layout.setAlignment(Qt.AlignCenter)
 
-        # UI
         title = QLabel("Video přehrávač")
         title.setAlignment(Qt.AlignCenter)
         title.setObjectName("title")
@@ -37,11 +35,9 @@ class VideoPlayer(QWidget):
 
         self.setLayout(layout)
 
-        # STYLE
         self.setStyleSheet(style.stylesheet())
 
 
-    # LOGIC
     def open_file(self):
         file_path, _ = QFileDialog.getOpenFileName(
             self,
@@ -57,7 +53,6 @@ class VideoPlayer(QWidget):
             ])
 
 
-# ENTRY
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = VideoPlayer()

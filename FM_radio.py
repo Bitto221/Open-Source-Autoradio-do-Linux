@@ -22,13 +22,11 @@ class FmRadio(QWidget):
         self.freq = 100.2
         self.is_playing = False
 
-        # Timer pro debounce slideru — restartuje rádio až 500ms po posledním pohybu
         self.freq_timer = QTimer()
         self.freq_timer.setSingleShot(True)
         self.freq_timer.setInterval(500)
         self.freq_timer.timeout.connect(self._restart_if_playing)
 
-        # UI
         self.label = QLabel(f"{self.freq:.1f} MHz")
         self.label.setAlignment(Qt.AlignCenter)
         self.label.setObjectName("title")
@@ -52,7 +50,7 @@ class FmRadio(QWidget):
         self.setStyleSheet(style.stylesheet())
 
     def start_radio(self):
-        self.stop_radio()  # Zastavíme předchozí procesy a počkáme
+        self.stop_radio()
 
         cmd = [
             "rtl_fm",
@@ -63,14 +61,13 @@ class FmRadio(QWidget):
             "-g", "25",
             "-E", "deemp",
             "-"
-            # Odstraněno: "-dc" — může způsobit tiché selhání na starších verzích
         ]
 
         try:
             self.process = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL  # Potlačí výpisy rtl_fm do konzole
+                stderr=subprocess.DEVNULL
             )
 
             self.audio = subprocess.Popen(
@@ -91,7 +88,6 @@ class FmRadio(QWidget):
         self.is_playing = False
         self.play_btn.setText("Play")
 
-        # Nejdřív ukončíme audio, pak rtl_fm
         for proc in [self.audio, self.process]:
             if proc:
                 try:
@@ -109,7 +105,6 @@ class FmRadio(QWidget):
     def change_freq(self, value):
         self.freq = value / 10
         self.label.setText(f"{self.freq:.1f} MHz")
-        # Debounce: restartujeme až po 500ms klidu, ne při každém tiku slideru
         self.freq_timer.start()
 
     def _restart_if_playing(self):

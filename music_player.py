@@ -14,7 +14,6 @@ class MusicPlayer(QWidget):
     def __init__(self):
         super().__init__()
 
-        # WINDOW
         self.setWindowTitle("Music Player")
         self.setFixedSize(800, 480)
         self.setWindowFlags(Qt.Window)
@@ -25,7 +24,6 @@ class MusicPlayer(QWidget):
         self.player = self.vlc_instance.media_player_new()
         self.player.audio_set_volume(100)
 
-        # UI
         self.title = QLabel("Select a song")
         self.title.setAlignment(Qt.AlignCenter)
         self.title.setObjectName("title")
@@ -40,7 +38,6 @@ class MusicPlayer(QWidget):
         self.progress = QSlider(Qt.Horizontal)
         self.progress.setRange(0, 1000)
 
-        # LAYOUT
         top = QHBoxLayout()
         top.addStretch()
         top.addWidget(self.add_btn)
@@ -63,22 +60,18 @@ class MusicPlayer(QWidget):
 
         self.setLayout(self.layout)
 
-        # SIGNALS
         self.add_btn.clicked.connect(self.select_song)
         self.play_btn.clicked.connect(self.player.play)
         self.pause_btn.clicked.connect(self.player.pause)
         self.stop_btn.clicked.connect(self.player.stop)
         self.progress.sliderMoved.connect(self.set_position)
 
-        # TIMER
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_progress)
         self.timer.start(400)
 
-        # STYLE
         self.setStyleSheet(style.stylesheet())
 
-    # LOGIC
     def select_song(self):
         dialog = QFileDialog(self)
         dialog.setFileMode(QFileDialog.ExistingFile)
@@ -96,7 +89,6 @@ class MusicPlayer(QWidget):
         self.title.setText(os.path.basename(file))
         self.player.play()
 
-        # schovej tlačítko add
         self.add_btn.hide()
 
     def update_progress(self):
@@ -109,9 +101,6 @@ class MusicPlayer(QWidget):
     def set_position(self, value):
         self.player.set_position(value / 1000)
 
-
-
-# ENTRY
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MusicPlayer()

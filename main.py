@@ -37,7 +37,8 @@ class Launcher(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Launcher")
-        self.setFixedSize(800, 480)
+        self.setWindowFlags(Qt.FramelessWindowHint)
+        self.showFullScreen()
         self.setAttribute(Qt.WA_StyledBackground, True)
 
         self.setStyleSheet(f"""

@@ -4,16 +4,12 @@ import os
 from PyQt5.QtGui import QFont
 
 
-# ===== CESTY =====
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 SETTINGS_FILE = os.path.join(BASE_DIR, "theme_settings.json")
 
 WALLPAPER_DIR = os.path.join(BASE_DIR, "wallpapers")
 
-
-# ===== VÝCHOZÍ =====
 
 DEFAULT_COLOR = "#6a4df4"
 
@@ -22,8 +18,6 @@ DEFAULT_WALLPAPER = os.path.join(
     "purple.jpg"
 )
 
-
-# ===== ULOŽENÍ =====
 
 def save_theme(color, wallpaper):
 
@@ -35,8 +29,6 @@ def save_theme(color, wallpaper):
     with open(SETTINGS_FILE, "w") as f:
         json.dump(data, f)
 
-
-# ===== NAČTENÍ =====
 
 def load_theme():
 
@@ -73,8 +65,6 @@ def load_theme():
         }
 
 
-# ===== AKTUÁLNÍ TÉMA =====
-
 THEME = load_theme()
 
 MAIN_COLOR = THEME["color"]
@@ -82,7 +72,6 @@ MAIN_COLOR = THEME["color"]
 WALLPAPER = THEME["wallpaper"]
 
 
-# ===== FONTY =====
 
 def title_font():
     return QFont("Arial", 36, QFont.Bold)
@@ -92,7 +81,6 @@ def normal_font():
     return QFont("Arial", 14)
 
 
-# ===== STYL =====
 
 def stylesheet():
 

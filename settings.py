@@ -35,14 +35,12 @@ class Settings(QWidget):
 
         self.setLayout(main)
 
-    # ---------------- SECTION BUILDER ----------------
     def section_box(self, title):
         box = QGroupBox(title)
         layout = QVBoxLayout()
         box.setLayout(layout)
         return box
 
-    # ---------------- WIFI ----------------
     def wifi_section(self):
         box = self.section_box("Wi-Fi")
 
@@ -58,7 +56,6 @@ class Settings(QWidget):
         else:
             print("Chybí nm-connection-editor (sudo apt install network-manager-gnome)")
 
-    # ---------------- BLUETOOTH ----------------
     def bluetooth_section(self):
         box = self.section_box("Bluetooth")
 
@@ -74,7 +71,6 @@ class Settings(QWidget):
         else:
             print("Chybí blueman (sudo apt install blueman)")
 
-    # ---------------- AUDIO ----------------
     def audio_section(self):
         box = self.section_box("Zvuk")
 
@@ -95,7 +91,6 @@ class Settings(QWidget):
         else:
             print("Chybí pactl (pulseaudio-utils nebo pipewire-pulse)")
 
-    # ---------------- SYSTEM ----------------
     def system_section(self):
         box = self.section_box("Systém")
 
@@ -105,7 +100,6 @@ class Settings(QWidget):
         box.layout().addWidget(btn)
         return box
 
-    # ---------------- EXIT MAIN APP ----------------
     def go_to_linux(self):
         subprocess.Popen(["pkill", "-f", "main.py"])
 

@@ -38,7 +38,6 @@ class ThemeSelector(QWidget):
 
         layout.addWidget(title)
 
-        # ===== TÉMATA =====
 
         themes = {
 
@@ -107,31 +106,24 @@ class ThemeSelector(QWidget):
 
         self.setLayout(layout)
 
-    # ===== ZMĚNA TÉMATU =====
 
     def select_theme(self, color, wallpaper):
 
-        # uloží nové téma
         style.save_theme(color, wallpaper)
 
-        # zavře starý launcher
         subprocess.run([
             "pkill",
             "-f",
             "main.py"
         ])
 
-        # znovu spustí launcher
         subprocess.Popen([
             sys.executable,
             os.path.join(BASE_DIR, "main.py")
         ])
 
-        # zavře themes okno
         QApplication.quit()
 
-
-# ===== START =====
 
 if __name__ == "__main__":
 
