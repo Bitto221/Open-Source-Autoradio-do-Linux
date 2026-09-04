@@ -1,135 +1,106 @@
 import sys
 import os
-import subprocess
 
 from PyQt5.QtWidgets import (
     QApplication,
     QWidget,
-    QPushButton,
+    QToolButton,
+    QGridLayout,
     QVBoxLayout,
     QLabel
 )
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QSize
 
 import style
 
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-
 class ThemeSelector(QWidget):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent=None, on_theme_changed=None):
+        super().__init__(parent)
 
-        self.setWindowTitle("Themes")
-        self.setFixedSize(800, 480)
+        # Called with (color, wallpaper_path) right after a theme is
+        # picked, so the shell can restyle everything live - no more
+        # killing and relaunching the whole app.
+        self.on_theme_changed = on_theme_changed
 
         self.setObjectName("mainWindow")
-
+        self.setAttribute(Qt.WA_StyledBackground, True)
         self.setStyleSheet(style.stylesheet())
 
-        title = QLabel("Select Theme")
+        subtitle = QLabel("VZHLED")
+        subtitle.setObjectName("subtitle")
+        subtitle.setAlignment(Qt.AlignCenter)
+
+        title = QLabel("Vyberte motiv")
         title.setObjectName("title")
         title.setAlignment(Qt.AlignCenter)
 
         layout = QVBoxLayout()
-
+        layout.setContentsMargins(30, 16, 30, 16)
+        layout.addWidget(subtitle)
         layout.addWidget(title)
+        layout.addSpacing(10)
 
+        grid = QGridLayout()
+        grid.setSpacing(18)
 
-        themes = {
+        cols = 3
+        for index, (name, (color, wallpaper_file)) in enumerate(style.THEMES.items()):
 
-            "Purple": (
-                "#6a4df4",
-                "purple.jpg"
-            ),
+            wallpaper = os.path.join(style.WALLPAPER_DIR, wallpaper_file)
 
-            "Red": (
-                "#ff0033",
-                "red.jpg"
-            ),
-
-            "Blue": (
-                "#0099ff",
-                "blue.jpg"
-            ),
-
-            "Green": (
-                "#00cc66",
-                "green.jpg"
-            ),
-
-            "Orange": (
-                "#ff8800",
-                "orange.jpg"
-            ),
-
-            "Pink": (
-                "#ff00aa",
-                "pink.jpg"
-            )
-        }
-
-        for name, data in themes.items():
-
-            color = data[0]
-
-            wallpaper = os.path.join(
-                style.WALLPAPER_DIR,
-                data[1]
-            )
-
-            btn = QPushButton(name)
-
+            btn = QToolButton()
+            btn.setText(name)
+            btn.setCheckable(False)
+            btn.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+            btn.setFixedSize(150, 100)
             btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {color};
-                color: white;
-                border-radius: 20px;
-                font-size: 24px;
-                padding: 18px;
-            }}
+                QToolButton {{
+                    background-color: {style.rgba(color, 60)};
+                    border: 2px solid {color};
+                    border-radius: 18px;
+                    color: white;
+                    font-size: 14px;
+                    font-weight: bold;
+                }}
+                QToolButton:hover {{
+                    background-color: {style.rgba(color, 110)};
+                    border: 2px solid {style.lighten(color, 0.35)};
+                }}
             """)
 
             btn.clicked.connect(
-
-                lambda checked,
-                c=color,
-                w=wallpaper:
-
-                self.select_theme(c, w)
+                lambda checked, c=color, w=wallpaper: self.select_theme(c, w)
             )
 
-            layout.addWidget(btn)
+            row, col = divmod(index, cols)
+            grid.addWidget(btn, row, col, alignment=Qt.AlignCenter)
+
+        layout.addLayout(grid)
+        layout.addStretch()
 
         self.setLayout(layout)
-
 
     def select_theme(self, color, wallpaper):
 
         style.save_theme(color, wallpaper)
+        style.refresh()
 
-        subprocess.run([
-            "pkill",
-            "-f",
-            "main.py"
-        ])
-
-        subprocess.Popen([
-            sys.executable,
-            os.path.join(BASE_DIR, "main.py")
-        ])
-
-        QApplication.quit()
+        if self.on_theme_changed:
+            self.on_theme_changed(color, wallpaper)
+        else:
+            # standalone mode - just restyle this window as a preview
+            self.setStyleSheet(style.stylesheet())
 
 
 if __name__ == "__main__":
-
     app = QApplication(sys.argv)
 
     window = ThemeSelector()
+    window.setWindowTitle("Themes")
+    window.setFixedSize(800, 480)
     window.show()
 
     sys.exit(app.exec_())

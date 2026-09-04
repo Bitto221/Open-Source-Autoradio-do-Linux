@@ -1,4 +1,5 @@
 import sys
+import os
 import json
 import requests
 from datetime import datetime
@@ -12,24 +13,26 @@ from PyQt5.QtWidgets import (
     QFrame
 )
 
-from PyQt5.QtGui import QFont, QPixmap
+from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
 
 import style
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 API_KEY = "4e51d8b7ce09f005478ff9f2fe9411c0"
 CITY = "Prague"
 
-CACHE_FILE = "weather_cache.json"
+CACHE_FILE = os.path.join(BASE_DIR, "weather_cache.json")
+
 
 class WeatherApp(QWidget):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent=None):
+        super().__init__(parent)
 
-        self.setWindowTitle("Weather")
-        self.setFixedSize(800, 480)
         self.setObjectName("mainWindow")
+        self.setAttribute(Qt.WA_StyledBackground, True)
         self.setStyleSheet(style.stylesheet())
         self.init_ui()
         self.load_weather()
@@ -37,34 +40,38 @@ class WeatherApp(QWidget):
     def init_ui(self):
 
         main = QVBoxLayout()
-        main.setSpacing(15)
-        title = QLabel("Počasí")
-        title.setObjectName("title")
+        main.setContentsMargins(30, 20, 30, 20)
+        main.setSpacing(12)
+
+        title = QLabel("POČASÍ")
+        title.setObjectName("subtitle")
         title.setAlignment(Qt.AlignCenter)
         main.addWidget(title)
+
+        self.city = QLabel(CITY)
+        self.city.setObjectName("title")
+        self.city.setAlignment(Qt.AlignCenter)
+        main.addWidget(self.city)
+
         self.time = QLabel("")
         self.time.setObjectName("label")
         self.time.setAlignment(Qt.AlignCenter)
         main.addWidget(self.time)
-        card = QFrame()
 
-        card.setStyleSheet("""
-        QFrame {
-            background-color: rgba(15, 15, 15, 210);
-            border-radius: 24px;
-        }
-        """)
+        card = QFrame()
+        card.setObjectName("lcdPanel")
 
         card_layout = QVBoxLayout(card)
-        card_layout.setSpacing(10)
+        card_layout.setContentsMargins(20, 18, 20, 18)
+        card_layout.setSpacing(8)
         self.icon = QLabel()
         self.icon.setAlignment(Qt.AlignCenter)
         self.temp = QLabel("-- °C")
         self.temp.setAlignment(Qt.AlignCenter)
+        self.temp.setFont(style.digital_font(40))
 
-        self.temp.setStyleSheet("""
-        color: white;
-        font-size: 42px;
+        self.temp.setStyleSheet(f"""
+        color: {style.lighten(style.get_color(), 0.35)};
         background: transparent;
         """)
 
@@ -77,24 +84,32 @@ class WeatherApp(QWidget):
         """)
 
         info = QHBoxLayout()
+        info.setSpacing(12)
         self.humidity = QLabel()
         self.wind = QLabel()
 
+        chip_style = f"""
+        color: white;
+        font-size: 14px;
+        font-weight: 600;
+        background-color: {style.rgba(style.get_color(), 55)};
+        border: 1px solid {style.rgba(style.get_color(), 130)};
+        border-radius: 14px;
+        padding: 6px 16px;
+        """
         for lbl in (self.humidity, self.wind):
             lbl.setAlignment(Qt.AlignCenter)
-            lbl.setStyleSheet("""
-            color: white;
-            font-size: 18px;
-            background: transparent;
-            """)
+            lbl.setStyleSheet(chip_style)
             info.addWidget(lbl)
+        info.setAlignment(Qt.AlignCenter)
+
         card_layout.addWidget(self.icon)
         card_layout.addWidget(self.temp)
         card_layout.addWidget(self.desc)
+        card_layout.addSpacing(4)
         card_layout.addLayout(info)
         main.addWidget(card)
         self.setLayout(main)
-
 
     def save_cache(self, data):
         data["_cached_at"] = datetime.now().strftime(
@@ -103,6 +118,7 @@ class WeatherApp(QWidget):
 
         with open(CACHE_FILE, "w") as f:
             json.dump(data, f)
+
     def load_weather(self):
 
         url = (
@@ -123,7 +139,7 @@ class WeatherApp(QWidget):
                 f"Aktualizováno {data['_cached_at']}"
             )
 
-        except:
+        except Exception:
             try:
                 with open(CACHE_FILE) as f:
                     data = json.load(f)
@@ -131,7 +147,7 @@ class WeatherApp(QWidget):
                     f"Offline data {data['_cached_at']}"
                 )
 
-            except:
+            except Exception:
                 self.desc.setText(
                     "Počasí není dostupné"
                 )
@@ -163,24 +179,31 @@ class WeatherApp(QWidget):
             "clear": "clear.png",
             "clouds": "clouds.png",
             "rain": "rain.png",
-            "snow": "snow.png"
+            "snow": "snow.png",
+            "mist": "mist.png",
+            "fog": "mist.png",
+            "haze": "mist.png"
         }.get(icon, "clouds.png")
 
-        pix = QPixmap(f"icons/weather/{file}")
+        pix = QPixmap(os.path.join(BASE_DIR, "icons", "weather", file))
 
         self.icon.setPixmap(
             pix.scaled(
-                120,
-                120,
+                110,
+                110,
                 Qt.KeepAspectRatio,
                 Qt.SmoothTransformation
             )
         )
 
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     win = WeatherApp()
+    win.setWindowTitle("Weather")
+    win.setFixedSize(800, 480)
     win.show()
     sys.exit(app.exec_())
+
 # hotovy kod
-# verze 4.7
+# verze 5.0

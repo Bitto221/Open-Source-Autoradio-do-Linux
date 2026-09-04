@@ -1,0 +1,35 @@
+#!/bin/sh
+# Tento soubor se kopíruje do ~/.xinitrc (viz install-kiosk.sh).
+# Spouští se automaticky přes `startx` po přihlášení na tty1, MÍSTO
+# gnome-shellu, který jsme vypnuli (GDM je zakázaný).
+
+# Bez desktop prostředí nemusí být vždy automaticky dostupná D-Bus
+# session sběrnice, kterou potřebuje `onboard` (nastavení klávesnice),
+# gnome-control-center i naše appka (přepínání klávesnice, Bluetooth).
+# Pokud ještě neběží, založíme ji tady - jinak necháme tu, kterou už
+# připravil systemd (běžné na desce, kde dřív běželo GNOME).
+if [ -z "$DBUS_SESSION_BUS_ADDRESS" ]; then
+    eval "$(dbus-launch --sh-syntax --exit-with-session)"
+fi
+
+# Appka se nikdy nemá uspat displej ani zhasnout obrazovku
+xset s off
+xset -dpms
+xset s noblank
+
+# Matchbox je odlehčený okenní manažer (žádný panel, žádná plocha,
+# žádný compositor jako mutter) - stará se jen o to, aby se okna
+# (např. Nastavení Wi-Fi/Bluetooth z gnome-control-center) vykreslovala
+# a přepínala správně. Appka samotná běží fullscreen bez okrajů, takže
+# na běžný provoz Matchbox ani nepoznáš, že tam je.
+matchbox-window-manager -use_titlebar no &
+
+# Dotyková klávesnice, co se sama zobrazí, když se klikne do
+# textového pole - kdekoliv (appka samotná, GTK dialogy typu Wi-Fi
+# heslo, i vestavěné YouTube/Mapy). Auto-show a ukotvení dole
+# nastavuje install-kiosk.sh při instalaci (dconf výchozí hodnoty).
+# Appka navíc má vlastní ikonku pro ruční zapnutí/vypnutí, kdyby se
+# automatické zobrazení někde nespustilo.
+onboard &
+
+exec __APP_DIR__/kiosk/run_autoradio.sh

@@ -10,26 +10,30 @@ from PyQt5.QtCore import Qt, QTimer
 
 import style
 
-class MusicPlayer(QWidget):
-    def __init__(self):
-        super().__init__()
 
-        self.setWindowTitle("Music Player")
-        self.setFixedSize(800, 480)
-        self.setWindowFlags(Qt.Window)
+class MusicPlayer(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
 
         self.setObjectName("mainWindow")
+        self.setAttribute(Qt.WA_StyledBackground, True)
 
         self.vlc_instance = vlc.Instance("--no-video", "--quiet")
         self.player = self.vlc_instance.media_player_new()
         self.player.audio_set_volume(100)
 
-        self.title = QLabel("Select a song")
+        page_title = QLabel("HUDBA")
+        page_title.setObjectName("subtitle")
+        page_title.setAlignment(Qt.AlignCenter)
+
+        self.title = QLabel("Vyberte skladbu")
         self.title.setAlignment(Qt.AlignCenter)
         self.title.setObjectName("title")
+        self.title.setWordWrap(True)
 
         self.add_btn = QPushButton("＋")
         self.add_btn.setObjectName("add")
+        self.add_btn.setToolTip("Vybrat / změnit skladbu")
 
         self.play_btn = QPushButton("▶")
         self.pause_btn = QPushButton("⏸")
@@ -39,6 +43,7 @@ class MusicPlayer(QWidget):
         self.progress.setRange(0, 1000)
 
         top = QHBoxLayout()
+        top.addWidget(page_title)
         top.addStretch()
         top.addWidget(self.add_btn)
 
@@ -51,6 +56,7 @@ class MusicPlayer(QWidget):
         controls.addStretch()
 
         self.layout = QVBoxLayout()
+        self.layout.setContentsMargins(30, 20, 30, 20)
         self.layout.addLayout(top)
         self.layout.addStretch()
         self.layout.addWidget(self.title)
@@ -89,8 +95,6 @@ class MusicPlayer(QWidget):
         self.title.setText(os.path.basename(file))
         self.player.play()
 
-        self.add_btn.hide()
-
     def update_progress(self):
         if self.player.is_playing():
             length = self.player.get_length()
@@ -101,10 +105,22 @@ class MusicPlayer(QWidget):
     def set_position(self, value):
         self.player.set_position(value / 1000)
 
+    def stop_playback(self):
+        """Called by the shell when leaving the page / closing the app."""
+        try:
+            self.player.stop()
+        except Exception:
+            pass
+
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MusicPlayer()
+    window.setWindowTitle("Music Player")
+    window.setFixedSize(800, 480)
+    window.setWindowFlags(Qt.Window)
     window.show()
     sys.exit(app.exec_())
-# hotový kod 
-# verze 7.3
+
+# hotový kod
+# verze 8.0

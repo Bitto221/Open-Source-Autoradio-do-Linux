@@ -1,9 +1,10 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout
 from PyQt5.QtWebEngineWidgets import QWebEngineView
+from PyQt5.QtCore import Qt
 
 
-html = """
+HTML = """
 <!DOCTYPE html>
 <html>
 <head>
@@ -57,27 +58,31 @@ L.tileLayer(
 
 class Maps(QWidget):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent=None):
+        super().__init__(parent)
 
-        self.setWindowTitle("Maps")
-        self.setFixedSize(800, 480)
+        self.setObjectName("mainWindow")
+        self.setAttribute(Qt.WA_StyledBackground, True)
 
         self.browser = QWebEngineView()
-        self.browser.setHtml(html)
+        self.browser.setHtml(HTML)
 
         layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.browser)
 
         self.setLayout(layout)
 
 
-app = QApplication(sys.argv)
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
 
-window = Maps()
-window.show()
+    window = Maps()
+    window.setWindowTitle("Maps")
+    window.setFixedSize(800, 480)
+    window.show()
 
-sys.exit(app.exec_())
+    sys.exit(app.exec_())
 
 # hotový kod
-# verze 1.2
+# verze 1.3
