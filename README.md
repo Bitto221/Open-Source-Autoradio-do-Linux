@@ -56,6 +56,8 @@ Youtube a YouTube Music
 ----------------------------------
 YouTube a YouTube Music běží přímo vestavěné v aplikaci přes `QWebEngineView` (stejně jako Mapy) - žádné samostatné okno Chromia, žádná cizí horní lišta prohlížeče. Sestavují se navíc líně, až při prvním otevření, takže appka naskočí rychle. Adresu, na kterou se stránka otevře, lze změnit v `youtube.py` / `youtube_music.py` (proměnná `URL`).
 
+![desktop](printscreen/youtube.jpg)
+
 FM Radio
 ----------------------------------
 Dalším modulem je FM Rádio, napsané taky celé v Pythonu. Pro funkci tohoto rádia je potřeba SDR dongle. Já jsem si vybral RTL-SDR V4, protože je dobře odladěné. Nejdůležitější věc je ale anténa, která dělá tak 80 % kvality zvuku. Oblíbené stanice si appka ukládá do souboru *fm_presets.json*.
@@ -66,9 +68,13 @@ Video přehrávač
 ----------------------------------
 Dalším modulem je jednoduché okno jako spouštěč VLC přehrávače. Uživatel vyvolá okno, kde si vybere soubor, který chce přehrát, a ten se pak spustí pomocí VLC na celou obrazovku.
 
+![desktop](printscreen/video.jpg)
+
 DAB
 ----------------------------------
 Další modul není můj vlastní program - na přehrávání DAB jsem použil **Welle.io**. Je to jednoduchý program, který funguje skvěle na přehrávání DAB z RTL-SDR.
+
+![desktop](printscreen/welle.jpg)
 
 Počasí
 ----------------------------------
@@ -95,6 +101,8 @@ Dalším modulem je ovládání témat. Na výběr je 6 barev: **fialová**, **�
 Mapy
 ----------------------------------
 Dalším modulem je jednoduché vestavěné zobrazení webových map (OpenStreetMap přes Leaflet), které funguje jen s připojením k internetu.
+
+![desktop](printscreen/mapa.jpg)
 
 Navigace
 ----------------------------------
