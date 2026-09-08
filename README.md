@@ -1,6 +1,15 @@
 Open Source Autoradio do Linux
 ==============================
 
+## Novinky ve verzi 10 (opravy po testu na reálném zařízení)
+- **Hudební přehrávač**: tlačítko „+" neotvíralo dialog pro výběr souboru pod kiosk prostředím (matchbox) - vynucený `DontUseNativeDialog` + velikost dialogu shodná s celoobrazovkovým hlavním oknem způsobovaly, že se dialog otevřel za hlavním oknem. Přepsáno na stejné, ověřeně funkční volání jako u Videa.
+- **Počasí**: po načtení dat (velká ikona + digitální font) mohl layout narůst nad dostupnou výšku a zatlačit dolní lištu mimo obrazovku. Zúžený layout Počasí + přidaná pojistka v `main.py` (pevný strop výšky obsahové oblasti), která tohle napříč všemi stránkami znemožňuje do budoucna.
+- **Bluetooth**: ikonka v docku teď dělá něco jiného než tlačítko v Nastavení - přepíná viditelnost/párovatelnost desky (`bluetoothctl discoverable/pairable`), aby ji telefon našel a mohl na ni streamovat zvuk (deska jako Bluetooth reproduktor / A2DP sink), místo aby jen otevírala GNOME panel pro správu spárovaných zařízení. Doplněné potřebné systémové balíčky pro Bluetooth audio.
+- **RTL-SDR V4**: upřesněná poznámka v README - na testovaném zařízení funguje běžný balíček `rtl-sdr` s V4 dongle bez úprav, ovladač ze zdroje je potřeba jen výjimečně.
+
+## Novinky ve verzi 9
+- **README**: doplněné varování a přesný postup pro **RTL-SDR V4** - balíčkový `rtl-sdr` z apt repozitářů tenhle dongle často neumí správně inicializovat (jiný tuner než starší V3), takže by FM Rádio modul mohl hlásit prázdné pásmo, špatnou frekvenci nebo zkreslený zvuk. Přidaný návod na instalaci aktualizovaného ovladače (fork RTL-SDR Blog) ze zdroje, včetně blacklistu výchozího DVB-T ovladače.
+
 ## Novinky ve verzi 8
 - **README**: sekce "Potřebné knihovny" teď obsahuje i balíčky pro kiosk režim (`xserver-xorg`, `matchbox-window-manager`, `onboard`...), včetně vlastního `apt install` příkazu - dřív byly zmíněné jen uvnitř instalačního skriptu, teď je vidět úplný přehled na jednom místě.
 
@@ -56,11 +65,11 @@ Youtube a YouTube Music
 ----------------------------------
 YouTube a YouTube Music běží přímo vestavěné v aplikaci přes `QWebEngineView` (stejně jako Mapy) - žádné samostatné okno Chromia, žádná cizí horní lišta prohlížeče. Sestavují se navíc líně, až při prvním otevření, takže appka naskočí rychle. Adresu, na kterou se stránka otevře, lze změnit v `youtube.py` / `youtube_music.py` (proměnná `URL`).
 
-![desktop](printscreen/youtube.jpg)
-
 FM Radio
 ----------------------------------
-Dalším modulem je FM Rádio, napsané taky celé v Pythonu. Pro funkci tohoto rádia je potřeba SDR dongle. Já jsem si vybral RTL-SDR V4, protože je dobře odladěné. Nejdůležitější věc je ale anténa, která dělá tak 80 % kvality zvuku. Oblíbené stanice si appka ukládá do souboru *fm_presets.json*.
+Dalším modulem je FM Rádio, napsané taky celé v Pythonu. Pro funkci tohoto rádia je potřeba SDR dongle. Já jsem si vybral RTL-SDR V4. Nejdůležitější věc je ale anténa, která dělá tak 80 % kvality zvuku. Oblíbené stanice si appka ukládá do souboru *fm_presets.json*.
+
+**Poznámka k V4:** RTL-SDR V4 používá jiný tuner (R828D) než starší V3. Na testovaném zařízení (viz sekce "Potřebné knihovny") funguje běžný balíček `rtl-sdr` s V4 dongle bez problémů. Pokud by přesto FM Rádio hlásilo žádný signál, špatnou frekvenci nebo zkreslený zvuk, řešením je aktualizovaný ovladač - viz box v sekci "Potřebné knihovny".
 
 ![desktop](printscreen/FM_radio.jpg)
 
@@ -68,13 +77,9 @@ Video přehrávač
 ----------------------------------
 Dalším modulem je jednoduché okno jako spouštěč VLC přehrávače. Uživatel vyvolá okno, kde si vybere soubor, který chce přehrát, a ten se pak spustí pomocí VLC na celou obrazovku.
 
-![desktop](printscreen/video.jpg)
-
 DAB
 ----------------------------------
 Další modul není můj vlastní program - na přehrávání DAB jsem použil **Welle.io**. Je to jednoduchý program, který funguje skvěle na přehrávání DAB z RTL-SDR.
-
-![desktop](printscreen/welle.jpg)
 
 Počasí
 ----------------------------------
@@ -102,8 +107,6 @@ Mapy
 ----------------------------------
 Dalším modulem je jednoduché vestavěné zobrazení webových map (OpenStreetMap přes Leaflet), které funguje jen s připojením k internetu.
 
-![desktop](printscreen/mapa.jpg)
-
 Navigace
 ----------------------------------
 Posledním modulem je navigace - spouštěč nativní aplikace **GNOME Maps** (`gnome-maps`), stejně jako u ostatních skutečně externích programů (welle.io, prohlížeč). Pro plnohodnotné offline trasování by šlo `navigace.py` rozšířit o vlastní offline řešení (např. přes OSRM), ale v aktuální podobě appka žádný takový vlastní navigační modul neobsahuje - `navigace.py` jen otevře/zaostří okno GNOME Maps.
@@ -123,7 +126,7 @@ Tento seznam odpovídá tomu, co appka v aktuální podobě opravdu volá v kód
 
 **Systémové programy, které appka spouští:**
  - `vlc` - přehrávání videa (Video modul) i podkladová knihovna pro `python3-vlc` (hudební přehrávač)
- - `rtl-sdr` (poskytuje `rtl_fm`) + SDR dongle a anténa - FM Rádio modul
+ - `rtl-sdr` (poskytuje `rtl_fm`) + SDR dongle a anténa - FM Rádio modul. Funguje otestovaně i s RTL-SDR V4 (viz poznámka o V4 u FM Radio modulu výše a box níže, kdyby přesto byly problémy se signálem).
  - `alsa-utils` (poskytuje `aplay`) - výstup zvuku z FM Rádia
  - `welle.io` - DAB modul
  - `gnome-maps` - Navigace modul
@@ -132,7 +135,11 @@ Tento seznam odpovídá tomu, co appka v aktuální podobě opravdu volá v kód
  - `gnome-control-center` - Wi-Fi a Bluetooth v Nastavení (appka cílí na GNOME desktop)
  - `network-manager-gnome` (poskytuje `nm-connection-editor`) - záložní Wi-Fi nástroj, pokud by `gnome-control-center` chybělo
  - `blueman` (poskytuje `blueman-manager`) - záložní Bluetooth nástroj, pokud by `gnome-control-center` chybělo
+ - `bluez` (poskytuje `bluetoothctl`) - ikonka Bluetooth v dolní liště (zviditelnění desky pro párování z telefonu)
+ - `pulseaudio-module-bluetooth` **nebo** `libspa-0.2-bluetooth` - aby deska uměla přijímat a přehrávat zvuk streamovaný z telefonu přes Bluetooth (A2DP sink); podle toho, jestli systém používá PulseAudio, nebo PipeWire
  - `pulseaudio-utils` nebo `pipewire-pulse` (poskytuje `pactl`) - ovládání hlasitosti v Nastavení
+
+**Bluetooth: párování vs. deska jako Bluetooth reproduktor** - v appce jsou dvě různé věci: tlačítko "Otevřít nastavení Bluetooth" v Nastavení otevírá `gnome-control-center` pro správu/mazání spárovaných zařízení. Ikonka Bluetooth v dolní liště dělá něco jiného - zviditelní desku (`bluetoothctl discoverable/pairable on`), aby ji telefon vůbec našel a mohl se k ní připojit a streamovat na ni hudbu (deska pak funguje jako Bluetooth reproduktor / A2DP sink). Samotné zviditelnění ale nestačí, pokud chybí balíček pro Bluetooth audio (viz řádek výše) - bez něj se telefon může spárovat, ale zvuk by nešel přehrát.
 
 **Jen pro kiosk režim** (viz sekce "Kiosk režim" níže - běh appky bez GNOME desktopu, s automatickým startem):
  - `xserver-xorg`, `xinit`, `x11-xserver-utils` - holý X server, appka nepotřebuje celý desktop
@@ -148,8 +155,37 @@ Instalace na Ubuntu/Debianu (uprav podle skutečně nainstalovaného desktopu):
 sudo apt install python3 python3-pip python3-pyqt5 python3-pyqt5.qtwebengine \
     python3-vlc python3-requests vlc rtl-sdr alsa-utils welle.io gnome-maps \
     chromium-browser wmctrl gnome-control-center network-manager-gnome \
-    blueman pulseaudio-utils
+    blueman bluez pulseaudio-utils
+
+# jedno z těchto dvou, podle toho jestli systém běží na PulseAudio nebo
+# PipeWire (nutné, aby šel na desku streamovat zvuk z telefonu):
+sudo apt install pulseaudio-module-bluetooth
+# nebo:
+sudo apt install libspa-0.2-bluetooth
 ```
+
+**Poznámka k RTL-SDR V4:** V4 používá jiný tuner (R828D) než starší V3 a u některých systémů/starších verzí balíčku `rtl-sdr` býval problém (žádný signál, špatná frekvence, zkreslený zvuk) - vyžadovalo to aktualizovaný ovladač (fork RTL-SDR Blog). Na aktuálních systémech uvedených v tomhle READMU ale balíčkový `rtl-sdr` s V4 dongle otestovaně funguje bez problémů, takže postup níže potřebuješ jen v případě, že bys s obyčejným `rtl-sdr` narazil na některý z těch příznaků:
+```
+sudo apt purge '^librtlsdr'
+sudo rm -rvf /usr/lib/librtlsdr* /usr/include/rtl-sdr* /usr/local/lib/librtlsdr* \
+    /usr/local/include/rtl-sdr* /usr/local/include/rtl_* /usr/local/bin/rtl_*
+
+sudo apt install libusb-1.0-0-dev git cmake pkg-config build-essential
+
+git clone https://github.com/rtlsdrblog/rtl-sdr-blog
+cd rtl-sdr-blog
+mkdir build && cd build
+cmake ../ -DINSTALL_UDEV_RULES=ON
+make
+sudo make install
+sudo cp ../rtl-sdr.rules /etc/udev/rules.d/
+sudo ldconfig
+
+# ať kernel dongle nezabere jako DVB-T TV tuner dřív, než ho chytí rtl_fm
+echo 'blacklist dvb_usb_rtl28xxu' | sudo tee /etc/modprobe.d/blacklist-rtlsdr.conf
+sudo reboot
+```
+Tenhle ovladač je zpětně kompatibilní i se staršími dongly (V3 a generickými), takže ho klidně použij i bez V4.
 
 Pro appku samotnou stačí balíčky výše. Chceš-li rovnou i kiosk režim (appka po startu naskočí sama, bez GNOME), přidej ještě:
 ```
@@ -167,7 +203,8 @@ Pro nasazení v autě appka nepotřebuje kolem sebe celý desktop (GNOME/XFCE/KD
 2. Nastaví automatické přihlášení na tty1 (žádné zadávání hesla).
 3. Nainstaluje odlehčený okenní manažer *matchbox* (žádný panel, žádná plocha - jen správa oken, aby fungovala i okna Nastavení Wi-Fi/Bluetooth).
 4. Nainstaluje a nastaví dotykovou klávesnici *onboard* (viz níže).
-5. Appku spustí automaticky přes `startx` hned po přihlášení, na celou obrazovku.
+5. Nainstaluje podporu pro Bluetooth audio (`bluez` + `pulseaudio-module-bluetooth`/`libspa-0.2-bluetooth`), aby ikonka Bluetooth v docku mohla desku zviditelnit a telefon na ni mohl streamovat zvuk.
+6. Appku spustí automaticky přes `startx` hned po přihlášení, na celou obrazovku.
 
 Balíčky, které kiosk režim navíc potřebuje, jsou v sekci "Potřebné knihovny" výše ("Jen pro kiosk režim"). Instalátor si je nainstaluje sám, ruční instalace není potřeba.
 
@@ -198,4 +235,4 @@ Appka má navíc v dolní liště vlastní ikonku klávesnice pro ruční zapnut
 
 Pokud by se auto-show nechoval podle očekávání, dá se doladit i graficky: `onboard-settings` (potřebuje balíček `onboard` s podporou GUI nastavení).
 
-*Jedná se o verzi 8.*
+*Jedná se o verzi 10.*

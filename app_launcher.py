@@ -86,6 +86,41 @@ def open_bluetooth_manager():
     )
 
 
+def set_bluetooth_discoverable(enabled):
+    """Makes this device itself discoverable and pairable over Bluetooth,
+    so a phone can find *it* and connect to stream audio to it (the
+    Orange Pi acting as an A2DP sink / Bluetooth speaker) - a different
+    goal from open_bluetooth_manager(), which is for pairing/managing
+    devices the other way around. Toggled by the Bluetooth icon in the
+    dock.
+
+    This only handles visibility/pairability - actually receiving and
+    playing the audio once connected depends on the system's Bluetooth
+    audio stack (PipeWire+WirePlumber or PulseAudio with
+    pulseaudio-module-bluetooth) being installed, see README.
+
+    Never raises - if bluetoothctl isn't available, prints a message
+    instead of crashing the app."""
+
+    if not shutil.which("bluetoothctl"):
+        print(
+            "Chybí bluetoothctl (balíček bluez) - Bluetooth nelze "
+            "zviditelnit."
+        )
+        return False
+
+    state = "on" if enabled else "off"
+
+    try:
+        subprocess.run(["bluetoothctl", "power", "on"], timeout=5)
+        subprocess.run(["bluetoothctl", "pairable", state], timeout=5)
+        subprocess.run(["bluetoothctl", "discoverable", state], timeout=5)
+        return True
+    except Exception as e:
+        print(f"[CHYBA] Nepodařilo se nastavit viditelnost Bluetooth: {e}")
+        return False
+
+
 def toggle_onscreen_keyboard():
     """Shows/hides the on-screen (touch) keyboard - `onboard`, started
     alongside the kiosk session (see kiosk/xinitrc), is set up to

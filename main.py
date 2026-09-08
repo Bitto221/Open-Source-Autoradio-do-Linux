@@ -70,7 +70,7 @@ YouTubeMusicApp = _safe_import("youtube_music", "YouTubeMusicApp")
 import web
 import DAB
 import navigace
-from app_launcher import open_bluetooth_manager, toggle_onscreen_keyboard
+from app_launcher import set_bluetooth_discoverable, toggle_onscreen_keyboard
 
 EXTERNAL_LAUNCHERS = {
     "web": web.launch,
@@ -197,6 +197,9 @@ class HomeScreen(QWidget):
 
 
 class MainWindow(QWidget):
+    TOPBAR_HEIGHT = 36
+    DOCK_HEIGHT = 64
+
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Autoradio")
@@ -234,6 +237,15 @@ class MainWindow(QWidget):
         shell.addWidget(self._build_topbar())
 
         self.stack = QStackedWidget()
+        # Hard cap on the content area's height so that no single page's
+        # content (e.g. once real data loads and labels/images grow) can
+        # ever inflate the whole window and push the dock bar off the
+        # bottom of the screen - worst case a page's own content clips,
+        # but the dock/topbar chrome always stays put and visible.
+        screen = QApplication.primaryScreen()
+        if screen is not None:
+            available_height = screen.size().height() - self.TOPBAR_HEIGHT - self.DOCK_HEIGHT
+            self.stack.setFixedHeight(max(available_height, 200))
         shell.addWidget(self.stack, 1)
 
         shell.addWidget(self._build_dock())
@@ -247,7 +259,7 @@ class MainWindow(QWidget):
         bar = QWidget()
         bar.setObjectName("topBar")
         bar.setAttribute(Qt.WA_StyledBackground, True)
-        bar.setFixedHeight(36)
+        bar.setFixedHeight(self.TOPBAR_HEIGHT)
 
         layout = QHBoxLayout(bar)
         layout.setContentsMargins(18, 0, 14, 0)
@@ -285,7 +297,7 @@ class MainWindow(QWidget):
         bar = QWidget()
         bar.setObjectName("dockBar")
         bar.setAttribute(Qt.WA_StyledBackground, True)
-        bar.setFixedHeight(64)
+        bar.setFixedHeight(self.DOCK_HEIGHT)
 
         layout = QHBoxLayout(bar)
         layout.setContentsMargins(10, 6, 10, 6)
@@ -351,17 +363,18 @@ class MainWindow(QWidget):
         return btn
 
     def _make_bluetooth_button(self):
-        # Same visual style as the app icons in the dock, but it's a
-        # quick action (opens GNOME's Bluetooth panel) rather than a
-        # page - so it's not checkable/part of the page-switch group.
+        # Toggles Bluetooth discoverable/pairable mode directly (so a
+        # phone can find and connect to THIS device to stream audio to
+        # it) - checkable so it visibly lights up while active. For
+        # managing/removing already-paired devices, see Nastavení.
         btn = QToolButton()
         btn.setObjectName("dockIcon")
         btn.setIcon(QIcon(os.path.join(ICON_PATH, "bluetooth.png")))
         btn.setIconSize(QSize(24, 24))
         btn.setFixedSize(40, 40)
-        btn.setToolTip("Bluetooth - párování a přehrávání")
-        btn.setCheckable(False)
-        btn.clicked.connect(lambda: open_bluetooth_manager())
+        btn.setToolTip("Bluetooth - zviditelnit pro párování z telefonu")
+        btn.setCheckable(True)
+        btn.toggled.connect(lambda checked: set_bluetooth_discoverable(checked))
         return btn
 
     def _make_keyboard_button(self):

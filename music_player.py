@@ -79,14 +79,19 @@ class MusicPlayer(QWidget):
         self.setStyleSheet(style.stylesheet())
 
     def select_song(self):
-        dialog = QFileDialog(self)
-        dialog.setFileMode(QFileDialog.ExistingFile)
-        dialog.setNameFilter("Audio (*.mp3 *.wav *.ogg *.flac)")
-        dialog.setOption(QFileDialog.DontUseNativeDialog, True)
-        dialog.setFixedSize(800, 480)
+        # Uses the same simple static dialog call as video.py (which
+        # works reliably) instead of a manually built QFileDialog -
+        # forcing DontUseNativeDialog + a fixed size matching the
+        # fullscreen main window could open the dialog behind it under
+        # a bare window manager (no decorations to bring it to front).
+        file, _ = QFileDialog.getOpenFileName(
+            self,
+            "Vyberte skladbu",
+            "",
+            "Audio (*.mp3 *.wav *.ogg *.flac)"
+        )
 
-        if dialog.exec_():
-            file = dialog.selectedFiles()[0]
+        if file:
             self.load_song(file)
 
     def load_song(self, file):

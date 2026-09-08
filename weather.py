@@ -40,8 +40,8 @@ class WeatherApp(QWidget):
     def init_ui(self):
 
         main = QVBoxLayout()
-        main.setContentsMargins(30, 20, 30, 20)
-        main.setSpacing(12)
+        main.setContentsMargins(24, 10, 24, 10)
+        main.setSpacing(4)
 
         title = QLabel("POČASÍ")
         title.setObjectName("subtitle")
@@ -51,6 +51,7 @@ class WeatherApp(QWidget):
         self.city = QLabel(CITY)
         self.city.setObjectName("title")
         self.city.setAlignment(Qt.AlignCenter)
+        self.city.setStyleSheet("font-size: 26px;")
         main.addWidget(self.city)
 
         self.time = QLabel("")
@@ -62,13 +63,14 @@ class WeatherApp(QWidget):
         card.setObjectName("lcdPanel")
 
         card_layout = QVBoxLayout(card)
-        card_layout.setContentsMargins(20, 18, 20, 18)
-        card_layout.setSpacing(8)
+        card_layout.setContentsMargins(20, 10, 20, 10)
+        card_layout.setSpacing(2)
         self.icon = QLabel()
         self.icon.setAlignment(Qt.AlignCenter)
+        self.icon.setFixedHeight(70)
         self.temp = QLabel("-- °C")
         self.temp.setAlignment(Qt.AlignCenter)
-        self.temp.setFont(style.digital_font(40))
+        self.temp.setFont(style.digital_font(28))
 
         self.temp.setStyleSheet(f"""
         color: {style.lighten(style.get_color(), 0.35)};
@@ -79,7 +81,7 @@ class WeatherApp(QWidget):
         self.desc.setAlignment(Qt.AlignCenter)
         self.desc.setStyleSheet("""
         color: #cccccc;
-        font-size: 18px;
+        font-size: 15px;
         background: transparent;
         """)
 
@@ -90,12 +92,12 @@ class WeatherApp(QWidget):
 
         chip_style = f"""
         color: white;
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 600;
         background-color: {style.rgba(style.get_color(), 55)};
         border: 1px solid {style.rgba(style.get_color(), 130)};
-        border-radius: 14px;
-        padding: 6px 16px;
+        border-radius: 12px;
+        padding: 4px 14px;
         """
         for lbl in (self.humidity, self.wind):
             lbl.setAlignment(Qt.AlignCenter)
@@ -106,7 +108,7 @@ class WeatherApp(QWidget):
         card_layout.addWidget(self.icon)
         card_layout.addWidget(self.temp)
         card_layout.addWidget(self.desc)
-        card_layout.addSpacing(4)
+        card_layout.addSpacing(2)
         card_layout.addLayout(info)
         main.addWidget(card)
         self.setLayout(main)
@@ -189,8 +191,8 @@ class WeatherApp(QWidget):
 
         self.icon.setPixmap(
             pix.scaled(
-                110,
-                110,
+                64,
+                64,
                 Qt.KeepAspectRatio,
                 Qt.SmoothTransformation
             )
