@@ -1,6 +1,11 @@
 Open Source Autoradio do Linux
 ==============================
 
+## Novinky ve verzi 11 (druhé kolo oprav po testu na zařízení)
+- **welle.io (DAB) se nespouštěl** - je to samostatná Qt/QML appka a potřebuje QML runtime moduly navíc, které jsem v jedné z dřívějších verzí omylem vyřadil z README (kontroloval jsem tehdy jen, co používá náš vlastní Python kód, a přehlédl, že tenhle konkrétní balíček je potřeba pro welle.io samotné). Vráceno zpět + přidaný návod, jak si přesně přečíst z terminálu, který konkrétní modul chybí.
+- **Určování polohy v GNOME Maps s USB GPS přijímačem** - přidaný podrobný postup (`gpsd` + ověření přes `cgps`, propojení s GeoClue2) do sekce Navigace v README.
+- **Bluetooth přehrávání hudby z telefonu pořád nešlo** - chyběl běžící "agent", který by potvrzoval příchozí párování (samotné zviditelnění nestačí). Kiosk instalátor teď navíc nainstaluje `bluez-tools` a na pozadí spouští `bt-agent`, který páry potvrzuje automaticky.
+
 ## Novinky ve verzi 10 (opravy po testu na reálném zařízení)
 - **Hudební přehrávač**: tlačítko „+" neotvíralo dialog pro výběr souboru pod kiosk prostředím (matchbox) - vynucený `DontUseNativeDialog` + velikost dialogu shodná s celoobrazovkovým hlavním oknem způsobovaly, že se dialog otevřel za hlavním oknem. Přepsáno na stejné, ověřeně funkční volání jako u Videa.
 - **Počasí**: po načtení dat (velká ikona + digitální font) mohl layout narůst nad dostupnou výšku a zatlačit dolní lištu mimo obrazovku. Zúžený layout Počasí + přidaná pojistka v `main.py` (pevný strop výšky obsahové oblasti), která tohle napříč všemi stránkami znemožňuje do budoucna.
@@ -113,6 +118,22 @@ Posledním modulem je navigace - spouštěč nativní aplikace **GNOME Maps** (`
 
 ![desktop](printscreen/navigace.jpg)
 
+**Určování polohy s USB GPS přijímačem ("GPS mouse"):** GNOME Maps si polohu bere ze systémové služby **GeoClue2** - ta o USB GPS dongle sama o sobě neví, potřebuje se k ní přemostit přes `gpsd`. Postup:
+
+1. Nainstaluj a ověř, že GPS hardware sám o sobě funguje (nezávisle na GNOME Maps):
+   ```
+   sudo apt install gpsd gpsd-clients
+   sudo gpsd /dev/ttyUSB0 -F /var/run/gpsd.sock
+   cgps -s
+   ```
+   (Za `/dev/ttyUSB0` dosaď skutečné zařízení - zjistíš ho přes `ls /dev/ttyUSB* /dev/ttyACM*` po připojení GPS dongle, nebo `dmesg | tail` hned po zapojení.) `cgps` by měl začít ukazovat souřadnice, jakmile přijímač "chytí" satelity (může to venku i pár desítek sekund trvat, uvnitř budovy to nemusí chytit vůbec).
+2. Teprve když `cgps` reálně ukazuje polohu, řeš propojení s GeoClue2/GNOME Maps - tohle bohužel není univerzální jeden příkaz, protože se liší podle toho, jak přesně byl balíček `geoclue-2.0` na tvé distribuci zkompilovaný (ne všechny buildy mají zapnutou přímou podporu gpsd). Zkus v tomto pořadí:
+   - Zkontroluj `/etc/geoclue/geoclue.conf`, jestli obsahuje sekci `[gpsd]` nebo podobnou - pokud ano, jen ji povol (`enable=true`) a restartuj `geoclue`: `sudo systemctl restart geoclue`.
+   - Pokud ne, funguje spolehlivě i oklika přes lokální síťový NMEA zdroj, který GeoClue2 podporuje defaultně (`[network-nmea]` v `geoclue.conf`) - GPS data se pošlou přes `gpsd`/malý NMEA server na loopback a ohlásí se přes mDNS (Avahi) jako `_nmea-0183._tcp`, GeoClue2 si je pak sám najde.
+3. GNOME Maps restartuj až po tom, co víš, že GeoClue polohu má (`busctl --system introspect org.freedesktop.GeoClue2 /org/freedesktop/GeoClue2/Manager` ti řekne, jestli služba vůbec běží).
+
+Tohle je jediná ze tří věcí z posledního testu, kde přesný postup záleží na verzi/kompilaci `geoclue-2.0` na konkrétní desce - pokud by výše uvedené nesedělo na první pokus, ozvi se s tím, co `cgps -s` a obsah `/etc/geoclue/geoclue.conf` na desce ukazují, ať to doladíme přesně na tvůj systém.
+
 ## Potřebné knihovny
 Tento seznam odpovídá tomu, co appka v aktuální podobě opravdu volá v kódu (`main.py` a moduly, které importuje/spouští) - žádné položky navíc "pro jistotu". Balíčky jsou pojmenované podle Ubuntu/Debianu (na jiné distribuci ARM desky se názvy mohou lišit).
 
@@ -128,8 +149,9 @@ Tento seznam odpovídá tomu, co appka v aktuální podobě opravdu volá v kód
  - `vlc` - přehrávání videa (Video modul) i podkladová knihovna pro `python3-vlc` (hudební přehrávač)
  - `rtl-sdr` (poskytuje `rtl_fm`) + SDR dongle a anténa - FM Rádio modul. Funguje otestovaně i s RTL-SDR V4 (viz poznámka o V4 u FM Radio modulu výše a box níže, kdyby přesto byly problémy se signálem).
  - `alsa-utils` (poskytuje `aplay`) - výstup zvuku z FM Rádia
- - `welle.io` - DAB modul
+ - `welle.io` - DAB modul. **Je to samostatná Qt/QML aplikace** (ne náš Python kód) a potřebuje k běhu i QML runtime moduly - bez nich se buď vůbec nespustí, nebo naskočí prázdné okno. Balíček `welle.io` sám o sobě tyhle QML moduly na některých systémech nestrhne jako závislost, takže je čti jako samostatný požadavek - viz box hned pod hlavním instalačním příkazem níže.
  - `gnome-maps` - Navigace modul
+ - `gpsd`, `gpsd-clients` - pokud používáš USB GPS přijímač ("GPS mouse") pro určování polohy v Navigaci - viz box u modulu Navigace výše
  - `chromium-browser` - modul Web (obecné vyhledávání/prohlížení)
  - `wmctrl` - doporučeno pro externí moduly (Web, DAB, Navigace): když je okno už otevřené, appka ho jen přepne do popředí místo spouštění druhé instance. Bez `wmctrl` to pořád funguje, jen se okno pokaždé spustí znovu.
  - `gnome-control-center` - Wi-Fi a Bluetooth v Nastavení (appka cílí na GNOME desktop)
@@ -139,7 +161,14 @@ Tento seznam odpovídá tomu, co appka v aktuální podobě opravdu volá v kód
  - `pulseaudio-module-bluetooth` **nebo** `libspa-0.2-bluetooth` - aby deska uměla přijímat a přehrávat zvuk streamovaný z telefonu přes Bluetooth (A2DP sink); podle toho, jestli systém používá PulseAudio, nebo PipeWire
  - `pulseaudio-utils` nebo `pipewire-pulse` (poskytuje `pactl`) - ovládání hlasitosti v Nastavení
 
-**Bluetooth: párování vs. deska jako Bluetooth reproduktor** - v appce jsou dvě různé věci: tlačítko "Otevřít nastavení Bluetooth" v Nastavení otevírá `gnome-control-center` pro správu/mazání spárovaných zařízení. Ikonka Bluetooth v dolní liště dělá něco jiného - zviditelní desku (`bluetoothctl discoverable/pairable on`), aby ji telefon vůbec našel a mohl se k ní připojit a streamovat na ni hudbu (deska pak funguje jako Bluetooth reproduktor / A2DP sink). Samotné zviditelnění ale nestačí, pokud chybí balíček pro Bluetooth audio (viz řádek výše) - bez něj se telefon může spárovat, ale zvuk by nešel přehrát.
+**Bluetooth: párování vs. deska jako Bluetooth reproduktor** - v appce jsou dvě různé věci: tlačítko "Otevřít nastavení Bluetooth" v Nastavení otevírá `gnome-control-center` pro správu/mazání spárovaných zařízení. Ikonka Bluetooth v dolní liště dělá něco jiného - zviditelní desku (`bluetoothctl discoverable/pairable on`), aby ji telefon vůbec našel a mohl se k ní připojit a streamovat na ni hudbu (deska pak funguje jako Bluetooth reproduktor / A2DP sink).
+
+Aby tohle celé fungovalo, jsou potřeba tři různé věci najednou - pokud přehrávání z telefonu nejde, projdi je popořadě:
+1. **Zviditelnění** - ikonka v docku, jen říká telefonu "tady jsem".
+2. **Potvrzení párování** - bez běžícího "agenta" nemá BlueZ, kdo by příchozí párování potvrdil, takže by se telefon nespároval, i když desku najde. V kiosk režimu (`kiosk/install-kiosk.sh`) se o tohle stará `bt-agent` (balíček `bluez-tools`), který běží na pozadí a páry potvrzuje automaticky. Pokud appku spouštíš mimo kiosk skript, spusť si `bt-agent -c NoInputNoOutput &` ručně (nebo párování jednou potvrď přes `gnome-control-center`/`bluetoothctl`).
+3. **Přehrávání zvuku** - i po úspěšném spárování potřebuje systém balíček pro Bluetooth audio (`pulseaudio-module-bluetooth` nebo `libspa-0.2-bluetooth`, viz výše) - bez něj se telefon spáruje, ale zvuk nikam nepůjde. Ověření, že modul opravdu běží: `pactl list modules short | grep bluetooth` (PulseAudio) nebo `wpctl status` (PipeWire - Bluetooth zařízení by se mělo objevit v sekci Audio/Sinks po připojení telefonu).
+
+Pokud i po tomhle telefon nenabídne desku jako reproduktor v přehrávání hudby, zkontroluj na telefonu, že se skutečně připojil profil "Média/Audio" (A2DP), ne jen "Telefonní hovory" (HFP) - některé telefony je nabízí zvlášť.
 
 **Jen pro kiosk režim** (viz sekce "Kiosk režim" níže - běh appky bez GNOME desktopu, s automatickým startem):
  - `xserver-xorg`, `xinit`, `x11-xserver-utils` - holý X server, appka nepotřebuje celý desktop
@@ -155,7 +184,7 @@ Instalace na Ubuntu/Debianu (uprav podle skutečně nainstalovaného desktopu):
 sudo apt install python3 python3-pip python3-pyqt5 python3-pyqt5.qtwebengine \
     python3-vlc python3-requests vlc rtl-sdr alsa-utils welle.io gnome-maps \
     chromium-browser wmctrl gnome-control-center network-manager-gnome \
-    blueman bluez pulseaudio-utils
+    blueman bluez bluez-tools pulseaudio-utils
 
 # jedno z těchto dvou, podle toho jestli systém běží na PulseAudio nebo
 # PipeWire (nutné, aby šel na desku streamovat zvuk z telefonu):
@@ -163,6 +192,14 @@ sudo apt install pulseaudio-module-bluetooth
 # nebo:
 sudo apt install libspa-0.2-bluetooth
 ```
+
+**Poznámka k welle.io (DAB):** pokud se welle.io nespustí vůbec (ani přímo v terminálu mimo appku), skoro jistě chybí QML moduly - je to Qt/QML aplikace, ne náš Python kód. Spusť `welle-io` přímo v terminálu a přečti si chybovou hlášku - typicky uvidíš přesně `module "XYZ" is not installed`, což řekne, který balíček ještě chybí. Nejčastěji jde o (Qt5 sestavení, běžné na Ubuntu/Debian):
+```
+sudo apt install qml-module-qtquick2 qml-module-qtquick-controls \
+    qml-module-qtquick-controls2 qml-module-qtquick-dialogs \
+    qml-module-qtquick-layouts qml-module-qtgraphicaleffects qml-module-qtcharts
+```
+Pokud je welle.io sestavené proti Qt6 (novější balíčky/AppImage), hlášky budou zmiňovat moduly jako `QtCore`/`QtQuick.Dialogs` a odpovídající balíčky se jmenují s předponou `qml6-module-` místo `qml-module-` (např. `qml6-module-qtquick-dialogs`, `qml6-module-qtcore`) - podle přesné hlášky z terminálu poznáš, které varianty se to týká.
 
 **Poznámka k RTL-SDR V4:** V4 používá jiný tuner (R828D) než starší V3 a u některých systémů/starších verzí balíčku `rtl-sdr` býval problém (žádný signál, špatná frekvence, zkreslený zvuk) - vyžadovalo to aktualizovaný ovladač (fork RTL-SDR Blog). Na aktuálních systémech uvedených v tomhle READMU ale balíčkový `rtl-sdr` s V4 dongle otestovaně funguje bez problémů, takže postup níže potřebuješ jen v případě, že bys s obyčejným `rtl-sdr` narazil na některý z těch příznaků:
 ```
@@ -235,4 +272,4 @@ Appka má navíc v dolní liště vlastní ikonku klávesnice pro ruční zapnut
 
 Pokud by se auto-show nechoval podle očekávání, dá se doladit i graficky: `onboard-settings` (potřebuje balíček `onboard` s podporou GUI nastavení).
 
-*Jedná se o verzi 10.*
+*Jedná se o verzi 11.*

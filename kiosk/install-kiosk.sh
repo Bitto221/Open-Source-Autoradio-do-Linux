@@ -42,6 +42,21 @@ apt-get install --no-install-recommends -y \
     xserver-xorg xinit x11-xserver-utils matchbox-window-manager unclutter \
     onboard at-spi2-core dbus-x11 dconf-cli
 
+# 1b) Bluetooth audio (aby telefon mohl na desku streamovat zvuk a deska
+#     fungovala jako Bluetooth reproduktor / A2DP sink). Přesný název
+#     balíčku se liší podle toho, jestli deska používá PipeWire nebo
+#     PulseAudio - zkusíme oba, chybějící/neexistující balíček tenhle
+#     krok jen přeskočí a nezastaví zbytek instalace. `bluez-tools`
+#     dává k dispozici `bt-agent`, který na pozadí automaticky potvrzuje
+#     párování z telefonu - bez něj by zviditelnění samo o sobě
+#     nestačilo, protože by nebylo, co příchozí párování potvrdí.
+echo "==> Instaluji podporu pro Bluetooth audio (A2DP sink)..."
+apt-get install --no-install-recommends -y bluez bluez-tools || true
+apt-get install --no-install-recommends -y pulseaudio-module-bluetooth || \
+    echo "    (pulseaudio-module-bluetooth nedostupné - přeskakuji, deska možná používá PipeWire)"
+apt-get install --no-install-recommends -y libspa-0.2-bluetooth || \
+    echo "    (libspa-0.2-bluetooth nedostupné - přeskakuji, deska možná používá PulseAudio)"
+
 # 2) Výchozí nastavení klávesnice `onboard`: automaticky se zobrazit
 #    při kliknutí do textového pole a ukotvit dole na obrazovce (ne
 #    volně plovoucí okno). Nastavuje se přes dconf systémový profil,
@@ -122,6 +137,12 @@ echo "Dotyková klávesnice (onboard) se nastavila tak, aby se sama"
 echo "zobrazovala při psaní. Appka má navíc vlastní ikonku klávesnice"
 echo "v dolní liště pro ruční zapnutí/vypnutí, kdyby se automatické"
 echo "zobrazení někde nespustilo."
+echo
+echo "Ikonka Bluetooth v dolní liště zviditelní desku pro párování,"
+echo "aby se z telefonu dala streamovat hudba (deska = Bluetooth"
+echo "reproduktor). Na pozadí navíc běží bt-agent, který příchozí"
+echo "párování z telefonu automaticky potvrdí. Pro správu už"
+echo "spárovaných zařízení pořád slouží tlačítko v Nastavení."
 echo
 echo "Pro ruční test hned teď (bez restartu):"
 echo "  sudo systemctl restart getty@tty1"
