@@ -1,6 +1,17 @@
 Open Source Autoradio do Linux
 ==============================
 
+## Novinky ve verzi 14 (zásadní změna - odebrání Map, nový BT Hudba modul)
+- **Vestavěné Mapy odebrány** - navigaci už řeší modul Navigace (GNOME Maps), druhý mapový modul byl zbytečná duplicita. Soubor `map.py` i jeho ikona jsou pryč, `python3-pyqt5.qtwebengine` teď v README figuruje jen jako závislost YouTube/YouTube Music.
+- **Nový modul BT Hudba** nahrazuje tlačítko Map - ukazuje název skladby/interpreta/alba a stav přehrávání z telefonu streamujícího hudbu přes Bluetooth, plus tlačítka Předchozí/Přehrát-Pauza/Další. Čte a ovládá to přes BlueZ AVRCP (`org.bluez.MediaPlayer1` na D-Bus) - funguje s jakýmkoliv Bluetooth adaptérem, který BlueZ vidí, včetně obyčejného USB dongle (řeší se tím i to, že vestavěný Bluetooth na Orange Pi 5 Pro je nespolehlivý). Nová závislost: `python3-dbus`.
+
+## Novinky ve verzi 13 (podrobný postup pro GPS VK-162)
+- **Určování polohy s VK-162** - sekce Navigace v README přepsaná na konkrétní, ověřený postup šitý na míru VK-162 (u-blox čip, `/dev/ttyACM0`, 9600 baud): ověření hardwaru přes `gpsd`/`cgps`, propojení s GeoClue2 přes nástroj `gps-share` (postavený přímo pro tenhle účel, běží jako systemd služba), konfigurace GeoClue2 přes `/etc/geoclue/conf.d/`, a ověření přes `where-am-i` demo nástroj ještě před otevřením GNOME Maps.
+
+## Novinky ve verzi 12 (potvrzené opravy z reálného nasazení)
+- **welle.io - potvrzený přesný fix pro Qt6** - podle skutečné chybové hlášky z Orange Pi 5 Pro (`module "QtCore" is not installed`) stačí `sudo apt install qml6-module-qtcore qml6-module-qtquick-dialogs`. Qt5 varianta zůstává jako záloha pro starší systémy.
+- **Fyzické tlačítko napájení** - nová sekce v Kiosk režimu s nastavením, aby stisk vypínacího tlačítka rovnou vypnul zařízení bez čekání na potvrzovací dialog (`HandlePowerKey=poweroff` v `systemd-logind`, plus potlačení GNOME potvrzovacího dialogu pro případ běhu mimo kiosk režim).
+
 ## Novinky ve verzi 11 (druhé kolo oprav po testu na zařízení)
 - **welle.io (DAB) se nespouštěl** - je to samostatná Qt/QML appka a potřebuje QML runtime moduly navíc, které jsem v jedné z dřívějších verzí omylem vyřadil z README (kontroloval jsem tehdy jen, co používá náš vlastní Python kód, a přehlédl, že tenhle konkrétní balíček je potřeba pro welle.io samotné). Vráceno zpět + přidaný návod, jak si přesně přečíst z terminálu, který konkrétní modul chybí.
 - **Určování polohy v GNOME Maps s USB GPS přijímačem** - přidaný podrobný postup (`gpsd` + ověření přes `cgps`, propojení s GeoClue2) do sekce Navigace v README.
@@ -52,7 +63,7 @@ Přibyla i **spodní lišta (dock)** s domečkem uprostřed pro rychlý návrat 
 Spuštění je stále stejné - `python3 main.py`.
 
 ## Základní moduly
-Tento program obsahuje spoustu různých modulů. Většina běží v Pythonu a využívá PyQt5 s příslušnými potřebnými moduly. Hlavní desktop aplikace je **main.py**. Po spuštění tohoto kódu se spustí okno, kde lze vybrat různé aplikace. Ikony použité v desktop aplikaci jsem stáhnul z https://icons8.com/, ikony pro Domů a Bluetooth jsem dokreslil ve stejném stylu.
+Tento program obsahuje spoustu různých modulů. Většina běží v Pythonu a využívá PyQt5 s příslušnými potřebnými moduly. Hlavní desktop aplikace je **main.py**. Po spuštění tohoto kódu se spustí okno, kde lze vybrat různé aplikace. Ikony použité v desktop aplikaci jsem stáhnul z https://icons8.com/, ikony pro Domů, Bluetooth a BT Hudbu jsem dokreslil ve stejném stylu.
 
 ![desktop](printscreen/desktop.jpg)
 
@@ -68,7 +79,7 @@ Vzhled všech aplikací je jednotný a čistý. Výhodou je, že v případě po
 
 Youtube a YouTube Music
 ----------------------------------
-YouTube a YouTube Music běží přímo vestavěné v aplikaci přes `QWebEngineView` (stejně jako Mapy) - žádné samostatné okno Chromia, žádná cizí horní lišta prohlížeče. Sestavují se navíc líně, až při prvním otevření, takže appka naskočí rychle. Adresu, na kterou se stránka otevře, lze změnit v `youtube.py` / `youtube_music.py` (proměnná `URL`).
+YouTube a YouTube Music běží přímo vestavěné v aplikaci přes `QWebEngineView` - žádné samostatné okno Chromia, žádná cizí horní lišta prohlížeče. Sestavují se navíc líně, až při prvním otevření, takže appka naskočí rychle. Adresu, na kterou se stránka otevře, lze změnit v `youtube.py` / `youtube_music.py` (proměnná `URL`).
 
 FM Radio
 ----------------------------------
@@ -108,9 +119,11 @@ Dalším modulem je ovládání témat. Na výběr je 6 barev: **fialová**, **�
 
 ![desktop](printscreen/barvy.jpg)
 
-Mapy
+BT Hudba
 ----------------------------------
-Dalším modulem je jednoduché vestavěné zobrazení webových map (OpenStreetMap přes Leaflet), které funguje jen s připojením k internetu.
+Nahrazuje dřívější vestavěné Mapy - navigace už řeší modul Navigace (GNOME Maps), takže druhý mapový modul byl zbytečný. Místo toho ukazuje **co se právě přehrává na telefonu připojeném přes Bluetooth** - název skladby, interpreta, album a stav přehrávání, plus tlačítka Předchozí/Přehrát-Pauza/Další.
+
+Funguje to přes **BlueZ AVRCP** rozhraní (`org.bluez.MediaPlayer1` na systémové D-Bus sběrnici) - jakmile telefon streamuje hudbu do desky přes Bluetooth (A2DP), BlueZ automaticky zpřístupní i informace o přehrávané skladbě a dálkové ovládání, ať už je telefon Android nebo iPhone. Modul se na tohle rozhraní jen dívá, nepotřebuje žádné vlastní párování navíc - viz sekce Bluetooth výše v Nastavení/kiosk režimu, kde je popsané párování a A2DP zvuk samotný. Data se obnovují každých 1,5 sekundy; pokud není spárované/streamující zařízení, modul to napíše rovnou na obrazovku místo prázdné stránky.
 
 Navigace
 ----------------------------------
@@ -118,21 +131,64 @@ Posledním modulem je navigace - spouštěč nativní aplikace **GNOME Maps** (`
 
 ![desktop](printscreen/navigace.jpg)
 
-**Určování polohy s USB GPS přijímačem ("GPS mouse"):** GNOME Maps si polohu bere ze systémové služby **GeoClue2** - ta o USB GPS dongle sama o sobě neví, potřebuje se k ní přemostit přes `gpsd`. Postup:
+**Určování polohy s GPS přijímačem VK-162 ("GPS mouse", u-blox čip):** GNOME Maps si polohu bere ze systémové služby **GeoClue2**, která o USB GPS zařízení sama o sobě neví. VK-162 je založený na u-blox čipu a hlásí se jako standardní USB sériové zařízení (`/dev/ttyACM0`), takže funguje bez jakýchkoliv driverů - jen ho je potřeba propojit s GeoClue2. Postup:
 
-1. Nainstaluj a ověř, že GPS hardware sám o sobě funguje (nezávisle na GNOME Maps):
-   ```
-   sudo apt install gpsd gpsd-clients
-   sudo gpsd /dev/ttyUSB0 -F /var/run/gpsd.sock
-   cgps -s
-   ```
-   (Za `/dev/ttyUSB0` dosaď skutečné zařízení - zjistíš ho přes `ls /dev/ttyUSB* /dev/ttyACM*` po připojení GPS dongle, nebo `dmesg | tail` hned po zapojení.) `cgps` by měl začít ukazovat souřadnice, jakmile přijímač "chytí" satelity (může to venku i pár desítek sekund trvat, uvnitř budovy to nemusí chytit vůbec).
-2. Teprve když `cgps` reálně ukazuje polohu, řeš propojení s GeoClue2/GNOME Maps - tohle bohužel není univerzální jeden příkaz, protože se liší podle toho, jak přesně byl balíček `geoclue-2.0` na tvé distribuci zkompilovaný (ne všechny buildy mají zapnutou přímou podporu gpsd). Zkus v tomto pořadí:
-   - Zkontroluj `/etc/geoclue/geoclue.conf`, jestli obsahuje sekci `[gpsd]` nebo podobnou - pokud ano, jen ji povol (`enable=true`) a restartuj `geoclue`: `sudo systemctl restart geoclue`.
-   - Pokud ne, funguje spolehlivě i oklika přes lokální síťový NMEA zdroj, který GeoClue2 podporuje defaultně (`[network-nmea]` v `geoclue.conf`) - GPS data se pošlou přes `gpsd`/malý NMEA server na loopback a ohlásí se přes mDNS (Avahi) jako `_nmea-0183._tcp`, GeoClue2 si je pak sám najde.
-3. GNOME Maps restartuj až po tom, co víš, že GeoClue polohu má (`busctl --system introspect org.freedesktop.GeoClue2 /org/freedesktop/GeoClue2/Manager` ti řekne, jestli služba vůbec běží).
+**1. Ověř, že hardware sám o sobě funguje** (nezávisle na GNOME Maps):
+```
+sudo apt install gpsd gpsd-clients
+sudo gpsd /dev/ttyACM0 -F /var/run/gpsd.sock
+cgps -s
+```
+(Pokud se VK-162 nahlásí jako jiné zařízení, zjistíš skutečnou cestu přes `ls /dev/ttyACM* /dev/ttyUSB*` po připojení, nebo `dmesg | tail` hned po zapojení.) `cgps` by měl začít ukazovat souřadnice, jakmile přijímač "chytí" satelity - venku i pár desítek sekund, u okna to VK-162 zvládne i uvnitř, v hlubším vnitrozemí budovy nemusí chytit vůbec.
 
-Tohle je jediná ze tří věcí z posledního testu, kde přesný postup záleží na verzi/kompilaci `geoclue-2.0` na konkrétní desce - pokud by výše uvedené nesedělo na první pokus, ozvi se s tím, co `cgps -s` a obsah `/etc/geoclue/geoclue.conf` na desce ukazují, ať to doladíme přesně na tvůj systém.
+**2. Propoj GPS s GeoClue2 přes `gps-share`** - malý nástroj postavený přímo pro tenhle účel (na rozdíl od `gpsd` umí data poslat rovnou do GeoClue2 přes unix socket, který GeoClue2 podporuje nativně):
+```
+sudo apt install cargo libudev-dev pkg-config build-essential git
+git clone https://github.com/zeenix/gps-share.git
+cd gps-share
+cargo build --release
+sudo cp target/release/gps-share /usr/local/bin/
+```
+
+**3. Spouštěj `gps-share` jako systémovou službu**, ať běží na pozadí od startu:
+```
+sudo tee /etc/systemd/system/gps-share.service > /dev/null << 'EOF'
+[Unit]
+Description=GPS to GeoClue2 bridge (gps-share)
+After=multi-user.target
+
+[Service]
+ExecStart=/usr/local/bin/gps-share -s /var/run/gps-share.sock -b 9600 -a -x /dev/ttyACM0
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+sudo systemctl daemon-reload
+sudo systemctl enable --now gps-share.service
+```
+(`-s` = poslouchej na unix socketu, `-b 9600` = rychlost VK-162, `-a` = nezveřejňovat přes Avahi na síť, `-x` = neposlouchat na TCP - v autě stačí čistě lokální socket, žádné sdílení po síti.)
+
+**4. Řekni GeoClue2, ať ten socket používá:**
+```
+sudo mkdir -p /etc/geoclue/conf.d
+sudo tee /etc/geoclue/conf.d/99-gps-share.conf > /dev/null << 'EOF'
+[network-nmea]
+enable=true
+nmea-socket=/var/run/gps-share.sock
+EOF
+sudo systemctl restart geoclue
+```
+
+**5. Ověř, že GeoClue2 polohu skutečně má** (ukáže ji ještě předtím, než vůbec otevřeš GNOME Maps):
+```
+sudo apt install geoclue-2-demo
+/usr/libexec/geoclue-2.0/demos/where-am-i
+```
+Měly by se objevit reálné souřadnice s `Description: GPS` (ne `GeoIP`). Pokud furt ukazuje jen přibližnou polohu podle IP adresy, zkontroluj `journalctl -u gps-share -u geoclue` - tam uvidíš, jestli `gps-share` vůbec dostává data z GPS.
+
+Jakmile `where-am-i` ukáže správnou polohu, GNOME Maps ji použije automaticky - není potřeba nic dalšího nastavovat.
 
 ## Potřebné knihovny
 Tento seznam odpovídá tomu, co appka v aktuální podobě opravdu volá v kódu (`main.py` a moduly, které importuje/spouští) - žádné položky navíc "pro jistotu". Balíčky jsou pojmenované podle Ubuntu/Debianu (na jiné distribuci ARM desky se názvy mohou lišit).
@@ -141,9 +197,10 @@ Tento seznam odpovídá tomu, co appka v aktuální podobě opravdu volá v kód
  - `python3`
  - `python3-pip`
  - `python3-pyqt5` - základ celého UI
- - `python3-pyqt5.qtwebengine` - vestavěné YouTube, YouTube Music a Mapy (`QWebEngineView`)
+ - `python3-pyqt5.qtwebengine` - vestavěné YouTube a YouTube Music (`QWebEngineView`)
  - `python3-vlc` - Python vazby na VLC, používá hudební přehrávač
  - `python3-requests` - modul Počasí (OpenWeatherMap API)
+ - `python3-dbus` - modul BT Hudba (čte info o přehrávané skladbě a ovládá přehrávání přes BlueZ AVRCP na systémové D-Bus sběrnici)
 
 **Systémové programy, které appka spouští:**
  - `vlc` - přehrávání videa (Video modul) i podkladová knihovna pro `python3-vlc` (hudební přehrávač)
@@ -151,7 +208,9 @@ Tento seznam odpovídá tomu, co appka v aktuální podobě opravdu volá v kód
  - `alsa-utils` (poskytuje `aplay`) - výstup zvuku z FM Rádia
  - `welle.io` - DAB modul. **Je to samostatná Qt/QML aplikace** (ne náš Python kód) a potřebuje k běhu i QML runtime moduly - bez nich se buď vůbec nespustí, nebo naskočí prázdné okno. Balíček `welle.io` sám o sobě tyhle QML moduly na některých systémech nestrhne jako závislost, takže je čti jako samostatný požadavek - viz box hned pod hlavním instalačním příkazem níže.
  - `gnome-maps` - Navigace modul
- - `gpsd`, `gpsd-clients` - pokud používáš USB GPS přijímač ("GPS mouse") pro určování polohy v Navigaci - viz box u modulu Navigace výše
+ - `gpsd`, `gpsd-clients` - ověření, že GPS přijímač ("GPS mouse") sám o sobě funguje, nezávisle na GNOME Maps - viz box u modulu Navigace výše
+ - `cargo`, `libudev-dev`, `pkg-config`, `build-essential`, `git` - sestavení `gps-share` ze zdroje (propojuje GPS s GeoClue2/GNOME Maps)
+ - `geoclue-2-demo` - ověření, že GeoClue2 (a tedy GNOME Maps) reálně dostává polohu z GPS
  - `chromium-browser` - modul Web (obecné vyhledávání/prohlížení)
  - `wmctrl` - doporučeno pro externí moduly (Web, DAB, Navigace): když je okno už otevřené, appka ho jen přepne do popředí místo spouštění druhé instance. Bez `wmctrl` to pořád funguje, jen se okno pokaždé spustí znovu.
  - `gnome-control-center` - Wi-Fi a Bluetooth v Nastavení (appka cílí na GNOME desktop)
@@ -182,9 +241,9 @@ Pokud i po tomhle telefon nenabídne desku jako reproduktor v přehrávání hud
 Instalace na Ubuntu/Debianu (uprav podle skutečně nainstalovaného desktopu):
 ```
 sudo apt install python3 python3-pip python3-pyqt5 python3-pyqt5.qtwebengine \
-    python3-vlc python3-requests vlc rtl-sdr alsa-utils welle.io gnome-maps \
-    chromium-browser wmctrl gnome-control-center network-manager-gnome \
-    blueman bluez bluez-tools pulseaudio-utils
+    python3-vlc python3-requests python3-dbus vlc rtl-sdr alsa-utils welle.io \
+    gnome-maps chromium-browser wmctrl gnome-control-center \
+    network-manager-gnome blueman bluez bluez-tools pulseaudio-utils
 
 # jedno z těchto dvou, podle toho jestli systém běží na PulseAudio nebo
 # PipeWire (nutné, aby šel na desku streamovat zvuk z telefonu):
@@ -193,13 +252,20 @@ sudo apt install pulseaudio-module-bluetooth
 sudo apt install libspa-0.2-bluetooth
 ```
 
-**Poznámka k welle.io (DAB):** pokud se welle.io nespustí vůbec (ani přímo v terminálu mimo appku), skoro jistě chybí QML moduly - je to Qt/QML aplikace, ne náš Python kód. Spusť `welle-io` přímo v terminálu a přečti si chybovou hlášku - typicky uvidíš přesně `module "XYZ" is not installed`, což řekne, který balíček ještě chybí. Nejčastěji jde o (Qt5 sestavení, běžné na Ubuntu/Debian):
+**Poznámka k welle.io (DAB):** pokud se welle.io nespustí vůbec (ani přímo v terminálu mimo appku), skoro jistě chybí QML moduly - je to Qt/QML aplikace, ne náš Python kód. Spusť `welle-io` přímo v terminálu a přečti si chybovou hlášku - typicky uvidíš přesně `module "XYZ" is not installed`, což řekne, který balíček ještě chybí.
+
+Na Ubuntu s Qt6 (ověřeno na Orange Pi 5 Pro/Armbian - hláška `QQmlApplicationEngine failed to load component ... module "QtCore" is not installed`) pomůže:
+```
+sudo apt install qml6-module-qtcore qml6-module-qtquick-dialogs
+```
+
+Pokud je welle.io sestavené proti staršímu Qt5 (starší systémy), hlášky budou vypadat podobně, ale bez `6` v názvu balíčku:
 ```
 sudo apt install qml-module-qtquick2 qml-module-qtquick-controls \
     qml-module-qtquick-controls2 qml-module-qtquick-dialogs \
     qml-module-qtquick-layouts qml-module-qtgraphicaleffects qml-module-qtcharts
 ```
-Pokud je welle.io sestavené proti Qt6 (novější balíčky/AppImage), hlášky budou zmiňovat moduly jako `QtCore`/`QtQuick.Dialogs` a odpovídající balíčky se jmenují s předponou `qml6-module-` místo `qml-module-` (např. `qml6-module-qtquick-dialogs`, `qml6-module-qtcore`) - podle přesné hlášky z terminálu poznáš, které varianty se to týká.
+Podle přesné hlášky z terminálu (jestli zmiňuje `qml6-module-*` styl chyby, nebo ne) poznáš, která varianta sedí na tvůj systém. Hláška o `libvdpau_nvidia.so` ve stejném výpisu je neškodná - je to jen marná zkouška Nvidia video-dekodéru, který na Mali GPU stejně nikdy nebude použitý.
 
 **Poznámka k RTL-SDR V4:** V4 používá jiný tuner (R828D) než starší V3 a u některých systémů/starších verzí balíčku `rtl-sdr` býval problém (žádný signál, špatná frekvence, zkreslený zvuk) - vyžadovalo to aktualizovaný ovladač (fork RTL-SDR Blog). Na aktuálních systémech uvedených v tomhle READMU ale balíčkový `rtl-sdr` s V4 dongle otestovaně funguje bez problémů, takže postup níže potřebuješ jen v případě, že bys s obyčejným `rtl-sdr` narazil na některý z těch příznaků:
 ```
@@ -231,7 +297,7 @@ sudo apt install xserver-xorg xinit x11-xserver-utils matchbox-window-manager \
 ```
 Tenhle druhý příkaz spouštět nemusíš ručně - `kiosk/install-kiosk.sh` (viz sekce "Kiosk režim") ho zavolá za tebe automaticky. Je tu uvedený hlavně pro přehled, co všechno kiosk režim navíc potřebuje.
 
-S těmito knihovnami by appka měla fungovat správně. Pokud na zařízení nějaká volitelná knihovna (`python3-vlc`, `python3-pyqt5.qtwebengine`, `python3-requests`) chybí, appka to sama pozná a místo pádu zobrazí pro danou stránku hlášku „není dostupné" - zbytek appky běží dál.
+S těmito knihovnami by appka měla fungovat správně. Pokud na zařízení nějaká volitelná knihovna (`python3-vlc`, `python3-pyqt5.qtwebengine`, `python3-requests`, `python3-dbus`) chybí, appka to sama pozná a místo pádu zobrazí pro danou stránku hlášku „není dostupné" - zbytek appky běží dál.
 
 ## Kiosk režim (bez GNOME, automatický start)
 Pro nasazení v autě appka nepotřebuje kolem sebe celý desktop (GNOME/XFCE/KDE) - jen X server a appku samotnou přes celou obrazovku. Ve složce `kiosk/` je připravený jednorázový instalátor, který:
@@ -272,4 +338,18 @@ Appka má navíc v dolní liště vlastní ikonku klávesnice pro ruční zapnut
 
 Pokud by se auto-show nechoval podle očekávání, dá se doladit i graficky: `onboard-settings` (potřebuje balíček `onboard` s podporou GUI nastavení).
 
-*Jedná se o verzi 11.*
+### Fyzické tlačítko napájení
+Pokud má deska/displej připojené fyzické tlačítko napájení (ACPI power key), stojí za to nastavit, aby jen rovnou vypnulo zařízení, místo aby čekalo na potvrzení v nějakém dialogu (v kiosk režimu bez GNOME shellu by na takový dialog stejně nebylo kde kliknout):
+
+```
+sudo sed -i 's/^#\?HandlePowerKey=.*/HandlePowerKey=poweroff/' /etc/systemd/logind.conf
+sudo systemctl restart systemd-logind
+```
+Ověření, že se nastavení opravdu propsalo: `grep HandlePowerKey /etc/systemd/logind.conf` by měl ukázat `HandlePowerKey=poweroff` bez `#` na začátku. (Pokud by v souboru řádek `HandlePowerKey` úplně chyběl - neobvyklé, výchozí soubor ho obvykle má aspoň zakomentovaný - klidně ho na konec souboru přidej ručně: `echo "HandlePowerKey=poweroff" | sudo tee -a /etc/systemd/logind.conf`.)
+
+Pokud appku spouštíš i mimo kiosk režim, s běžícím GNOME desktopem, potlač ještě jeho vlastní potvrzovací dialog při odhlášení/vypnutí:
+```
+gsettings set org.gnome.SessionManager logout-prompt false
+```
+
+*Jedná se o verzi 14.*

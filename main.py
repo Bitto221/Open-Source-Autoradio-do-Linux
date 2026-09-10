@@ -37,7 +37,7 @@ APPS = [
     {"id": "web",      "label": "Web",       "icon": "browser.png",       "kind": "external"},
     {"id": "settings", "label": "Nastavení", "icon": "settings.png",      "kind": "embed"},
     {"id": "themes",   "label": "Vzhled",    "icon": "themes.png",        "kind": "embed"},
-    {"id": "map",      "label": "Mapy",      "icon": "map.png",           "kind": "embed"},
+    {"id": "btmusic",  "label": "BT Hudba",  "icon": "btmusic.png",       "kind": "embed"},
     {"id": "nav",      "label": "Navigace",  "icon": "navigation.png",    "kind": "external"},
 ]
 
@@ -63,7 +63,7 @@ VideoPlayer = _safe_import("video", "VideoPlayer")
 WeatherApp = _safe_import("weather", "WeatherApp")
 Settings = _safe_import("settings", "Settings")
 ThemeSelector = _safe_import("themes", "ThemeSelector")
-Maps = _safe_import("map", "Maps")
+BluetoothPlayer = _safe_import("bluetooth_player", "BluetoothPlayer")
 YouTubeApp = _safe_import("youtube", "YouTubeApp")
 YouTubeMusicApp = _safe_import("youtube_music", "YouTubeMusicApp")
 
@@ -87,13 +87,13 @@ EAGER_FACTORIES = {
     "video":    (VideoPlayer, "Video"),
     "settings": (Settings, "Nastavení"),
     "themes":   (ThemeSelector, "Vzhled"),
+    "btmusic":  (BluetoothPlayer, "BT Hudba"),
 }
 
 LAZY_FACTORIES = {
     "weather": (WeatherApp, "Počasí"),
     "youtube": (YouTubeApp, "YouTube"),
     "ytmusic": (YouTubeMusicApp, "YT Music"),
-    "map":     (Maps, "Mapy"),
 }
 
 
@@ -524,6 +524,6 @@ if __name__ == "__main__":
     sys.exit(app.exec_())
 
 # hotový kod
-# verze 9.0 - odebráno Spotify (nefunkční kvůli chybě), oprava hudebního
-# přehrávače (tlačítko + zůstává viditelné), bluetooth ikonka v docku,
-# Wi-Fi/Bluetooth přes nativní GNOME nastavení
+# verze 10.0 - odebrány vestavěné Mapy (nahrazuje je Navigace/GNOME Maps),
+# přidán BT Hudba - zobrazení a ovládání aktuálně přehrávané skladby
+# streamované z telefonu přes Bluetooth (AVRCP/BlueZ)
