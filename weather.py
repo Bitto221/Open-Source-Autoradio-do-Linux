@@ -14,7 +14,7 @@ from PyQt5.QtWidgets import (
 )
 
 from PyQt5.QtGui import QPixmap
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QThread, pyqtSignal
 
 import style
 
@@ -26,6 +26,30 @@ CITY = "Prague"
 CACHE_FILE = os.path.join(BASE_DIR, "weather_cache.json")
 
 
+class _WeatherFetcher(QThread):
+    """Does the actual HTTP request off the GUI thread - requests.get()
+    blocking for up to its 5s timeout right in the middle of the app's
+    main thread would freeze the whole UI the moment this page opens."""
+
+    succeeded = pyqtSignal(dict)
+    failed = pyqtSignal()
+
+    def run(self):
+        url = (
+            f"https://api.openweathermap.org/data/2.5/weather"
+            f"?q={CITY}"
+            f"&appid={API_KEY}"
+            f"&units=metric"
+            f"&lang=cs"
+        )
+        try:
+            r = requests.get(url, timeout=5)
+            r.raise_for_status()
+            self.succeeded.emit(r.json())
+        except Exception:
+            self.failed.emit()
+
+
 class WeatherApp(QWidget):
 
     def __init__(self, parent=None):
@@ -34,6 +58,7 @@ class WeatherApp(QWidget):
         self.setObjectName("mainWindow")
         self.setAttribute(Qt.WA_StyledBackground, True)
         self.setStyleSheet(style.stylesheet())
+        self._fetcher = None
         self.init_ui()
         self.load_weather()
 
@@ -122,40 +147,30 @@ class WeatherApp(QWidget):
             json.dump(data, f)
 
     def load_weather(self):
+        # Kick off the request in the background; UI updates happen in
+        # _on_fetch_succeeded/_on_fetch_failed once it's done, back on
+        # the GUI thread (Qt queues the signal delivery automatically).
+        if self._fetcher is not None and self._fetcher.isRunning():
+            return
 
-        url = (
-            f"https://api.openweathermap.org/data/2.5/weather"
-            f"?q={CITY}"
-            f"&appid={API_KEY}"
-            f"&units=metric"
-            f"&lang=cs"
-        )
+        self._fetcher = _WeatherFetcher(self)
+        self._fetcher.succeeded.connect(self._on_fetch_succeeded)
+        self._fetcher.failed.connect(self._on_fetch_failed)
+        self._fetcher.start()
 
-        try:
-            r = requests.get(url, timeout=5)
-            r.raise_for_status()
-            data = r.json()
-            self.save_cache(data)
-
-            self.time.setText(
-                f"Aktualizováno {data['_cached_at']}"
-            )
-
-        except Exception:
-            try:
-                with open(CACHE_FILE) as f:
-                    data = json.load(f)
-                self.time.setText(
-                    f"Offline data {data['_cached_at']}"
-                )
-
-            except Exception:
-                self.desc.setText(
-                    "Počasí není dostupné"
-                )
-
-                return
+    def _on_fetch_succeeded(self, data):
+        self.save_cache(data)
+        self.time.setText(f"Aktualizováno {data['_cached_at']}")
         self.update_ui(data)
+
+    def _on_fetch_failed(self):
+        try:
+            with open(CACHE_FILE) as f:
+                data = json.load(f)
+            self.time.setText(f"Offline data {data['_cached_at']}")
+            self.update_ui(data)
+        except Exception:
+            self.desc.setText("Počasí není dostupné")
 
     def update_ui(self, data):
 
@@ -208,4 +223,5 @@ if __name__ == "__main__":
     sys.exit(app.exec_())
 
 # hotovy kod
-# verze 5.0
+# verze 6.0 - síťový dotaz běží na pozadí (QThread), už neblokuje GUI
+# vlákno při otevření stránky

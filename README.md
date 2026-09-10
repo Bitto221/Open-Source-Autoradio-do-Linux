@@ -1,6 +1,10 @@
 Open Source Autoradio do Linux
 ==============================
 
+## Novinky ve verzi 15 (oprava sekání appky, sloučení Bluetooth ikonek)
+- **Oprava sekání appky** - modul BT Hudba dělal blokující D-Bus dotaz na pozadí každých 1,5 s bez ohledu na to, jaká stránka byla zrovna zobrazená, přímo v GUI vlákně - projevovalo se to jako pravidelné krátké zaseknutí celé appky. Teď se dotazuje jen dokud je stránka opravdu vidět. Stejná oprava aplikovaná na progress bar u Hudby. FM Rádio navíc přestalo přebarvovat tlačítka oblíbených stanic při každém posunu posuvníku frekvence (jen po jeho zastavení). Síťový dotaz na počasí navíc přesunutý do samostatného vlákna, ať neblokuje GUI, když je otevření stránky Počasí (a appka teď při zavírání počká, až se případný běžící dotaz dokončí, aby nešlo o tvrdý pád). Podrobnosti v nové sekci Výkon.
+- **Zrušená samostatná ikonka Bluetooth v docku** - appka teď má v dolní liště jen jednu ikonku s Bluetooth tématem (BT Hudba). Tlačítko "Zviditelnit pro párování" se přesunulo dovnitř modulu BT Hudba, kam kontextově patří.
+
 ## Novinky ve verzi 14 (zásadní změna - odebrání Map, nový BT Hudba modul)
 - **Vestavěné Mapy odebrány** - navigaci už řeší modul Navigace (GNOME Maps), druhý mapový modul byl zbytečná duplicita. Soubor `map.py` i jeho ikona jsou pryč, `python3-pyqt5.qtwebengine` teď v README figuruje jen jako závislost YouTube/YouTube Music.
 - **Nový modul BT Hudba** nahrazuje tlačítko Map - ukazuje název skladby/interpreta/alba a stav přehrávání z telefonu streamujícího hudbu přes Bluetooth, plus tlačítka Předchozí/Přehrát-Pauza/Další. Čte a ovládá to přes BlueZ AVRCP (`org.bluez.MediaPlayer1` na D-Bus) - funguje s jakýmkoliv Bluetooth adaptérem, který BlueZ vidí, včetně obyčejného USB dongle (řeší se tím i to, že vestavěný Bluetooth na Orange Pi 5 Pro je nespolehlivý). Nová závislost: `python3-dbus`.
@@ -121,9 +125,9 @@ Dalším modulem je ovládání témat. Na výběr je 6 barev: **fialová**, **�
 
 BT Hudba
 ----------------------------------
-Nahrazuje dřívější vestavěné Mapy - navigace už řeší modul Navigace (GNOME Maps), takže druhý mapový modul byl zbytečný. Místo toho ukazuje **co se právě přehrává na telefonu připojeném přes Bluetooth** - název skladby, interpreta, album a stav přehrávání, plus tlačítka Předchozí/Přehrát-Pauza/Další.
+Nahrazuje dřívější vestavěné Mapy - navigace už řeší modul Navigace (GNOME Maps), takže druhý mapový modul byl zbytečný. Místo toho ukazuje **co se právě přehrává na telefonu připojeném přes Bluetooth** - název skladby, interpreta, album a stav přehrávání, plus tlačítka Předchozí/Přehrát-Pauza/Další. Tlačítko **"Zviditelnit pro párování"** dole na stránce zapíná/vypíná viditelnost desky pro spárování z telefonu - je to jediné tlačítko s Bluetooth tématem v appce mimo Nastavení, žádná samostatná ikonka navíc v docku.
 
-Funguje to přes **BlueZ AVRCP** rozhraní (`org.bluez.MediaPlayer1` na systémové D-Bus sběrnici) - jakmile telefon streamuje hudbu do desky přes Bluetooth (A2DP), BlueZ automaticky zpřístupní i informace o přehrávané skladbě a dálkové ovládání, ať už je telefon Android nebo iPhone. Modul se na tohle rozhraní jen dívá, nepotřebuje žádné vlastní párování navíc - viz sekce Bluetooth výše v Nastavení/kiosk režimu, kde je popsané párování a A2DP zvuk samotný. Data se obnovují každých 1,5 sekundy; pokud není spárované/streamující zařízení, modul to napíše rovnou na obrazovku místo prázdné stránky.
+Funguje to přes **BlueZ AVRCP** rozhraní (`org.bluez.MediaPlayer1` na systémové D-Bus sběrnici) - jakmile telefon streamuje hudbu do desky přes Bluetooth (A2DP), BlueZ automaticky zpřístupní i informace o přehrávané skladbě a dálkové ovládání, ať už je telefon Android nebo iPhone. Modul se na tohle rozhraní jen dívá, nepotřebuje žádné vlastní párování navíc. Data se obnovují každé 2 sekundy, ale **jen dokud je stránka opravdu na obrazovce** - jakmile appka přepne na jinou stránku, dotazování se samo zastaví a zase naskočí při návratu, aby appka na pozadí zbytečně nezatěžovala systém pravidelnými D-Bus dotazy (viz sekce Výkon níže). Pokud není spárované/streamující zařízení, modul to napíše rovnou na obrazovku místo prázdné stránky.
 
 Navigace
 ----------------------------------
@@ -216,14 +220,14 @@ Tento seznam odpovídá tomu, co appka v aktuální podobě opravdu volá v kód
  - `gnome-control-center` - Wi-Fi a Bluetooth v Nastavení (appka cílí na GNOME desktop)
  - `network-manager-gnome` (poskytuje `nm-connection-editor`) - záložní Wi-Fi nástroj, pokud by `gnome-control-center` chybělo
  - `blueman` (poskytuje `blueman-manager`) - záložní Bluetooth nástroj, pokud by `gnome-control-center` chybělo
- - `bluez` (poskytuje `bluetoothctl`) - ikonka Bluetooth v dolní liště (zviditelnění desky pro párování z telefonu)
+ - `bluez` (poskytuje `bluetoothctl`) - zviditelnění desky pro párování (tlačítko v modulu BT Hudba) i modul BT Hudba samotný
  - `pulseaudio-module-bluetooth` **nebo** `libspa-0.2-bluetooth` - aby deska uměla přijímat a přehrávat zvuk streamovaný z telefonu přes Bluetooth (A2DP sink); podle toho, jestli systém používá PulseAudio, nebo PipeWire
  - `pulseaudio-utils` nebo `pipewire-pulse` (poskytuje `pactl`) - ovládání hlasitosti v Nastavení
 
-**Bluetooth: párování vs. deska jako Bluetooth reproduktor** - v appce jsou dvě různé věci: tlačítko "Otevřít nastavení Bluetooth" v Nastavení otevírá `gnome-control-center` pro správu/mazání spárovaných zařízení. Ikonka Bluetooth v dolní liště dělá něco jiného - zviditelní desku (`bluetoothctl discoverable/pairable on`), aby ji telefon vůbec našel a mohl se k ní připojit a streamovat na ni hudbu (deska pak funguje jako Bluetooth reproduktor / A2DP sink).
+**Bluetooth: párování vs. deska jako Bluetooth reproduktor** - v appce jsou dvě různé věci: tlačítko "Otevřít nastavení Bluetooth" v Nastavení otevírá `gnome-control-center` pro správu/mazání spárovaných zařízení. Tlačítko "Zviditelnit pro párování" v modulu **BT Hudba** dělá něco jiného - zviditelní desku (`bluetoothctl discoverable/pairable on`), aby ji telefon vůbec našel a mohl se k ní připojit a streamovat na ni hudbu (deska pak funguje jako Bluetooth reproduktor / A2DP sink). Obě tlačítka jsou záměrně jen dvě, ne tři - v dolní liště appka teď má jen jednu ikonku s Bluetooth tématem (BT Hudba), aby to nepůsobilo zmatečně.
 
 Aby tohle celé fungovalo, jsou potřeba tři různé věci najednou - pokud přehrávání z telefonu nejde, projdi je popořadě:
-1. **Zviditelnění** - ikonka v docku, jen říká telefonu "tady jsem".
+1. **Zviditelnění** - tlačítko v modulu BT Hudba, jen říká telefonu "tady jsem".
 2. **Potvrzení párování** - bez běžícího "agenta" nemá BlueZ, kdo by příchozí párování potvrdil, takže by se telefon nespároval, i když desku najde. V kiosk režimu (`kiosk/install-kiosk.sh`) se o tohle stará `bt-agent` (balíček `bluez-tools`), který běží na pozadí a páry potvrzuje automaticky. Pokud appku spouštíš mimo kiosk skript, spusť si `bt-agent -c NoInputNoOutput &` ručně (nebo párování jednou potvrď přes `gnome-control-center`/`bluetoothctl`).
 3. **Přehrávání zvuku** - i po úspěšném spárování potřebuje systém balíček pro Bluetooth audio (`pulseaudio-module-bluetooth` nebo `libspa-0.2-bluetooth`, viz výše) - bez něj se telefon spáruje, ale zvuk nikam nepůjde. Ověření, že modul opravdu běží: `pactl list modules short | grep bluetooth` (PulseAudio) nebo `wpctl status` (PipeWire - Bluetooth zařízení by se mělo objevit v sekci Audio/Sinks po připojení telefonu).
 
@@ -299,6 +303,14 @@ Tenhle druhý příkaz spouštět nemusíš ručně - `kiosk/install-kiosk.sh` (
 
 S těmito knihovnami by appka měla fungovat správně. Pokud na zařízení nějaká volitelná knihovna (`python3-vlc`, `python3-pyqt5.qtwebengine`, `python3-requests`, `python3-dbus`) chybí, appka to sama pozná a místo pádu zobrazí pro danou stránku hlášku „není dostupné" - zbytek appky běží dál.
 
+## Výkon
+Pár míst v appce dělá pravidelně se opakující práci na pozadí (kontrola BT přehrávače, aktualizace progress baru u hudby, síťový dotaz na počasí) - u těch platí jedno pravidlo: **nic z toho neběží, když se to zrovna nedívá na obrazovku, a nic z toho neblokuje zbytek appky, když to běží**.
+
+- **BT Hudba a Hudba** - dotazování/aktualizace progress baru běží jen dokud je daná stránka opravdu zobrazená (`showEvent`/`hideEvent` zastaví a znovu spustí časovač). Dřív běželo dotazování BT přehrávače na pozadí pořád, i na úplně jiné stránce - každé 1,5 s to udělalo blokující D-Bus dotaz přímo v GUI vlákně, což se projevovalo jako pravidelné krátké zaseknutí celé appky bez ohledu na to, co uživatel zrovna dělal.
+- **FM Rádio** - přebarvování 6 tlačítek oblíbených stanic (aby se zvýraznila ta aktuálně naladěná) se dřív přepočítávalo při každičkém posunu posuvníku frekvence - při plynulém tažení to bylo klidně desítkykrát za sekundu. Teď se to (stejně jako restart rádia) čeká, až se posuvník na 0,5 s zastaví.
+- **Počasí** - síťový dotaz na openweathermap.org teď běží v samostatném vlákně (`QThread`), takže i kdyby internet byl pomalý nebo nedostupný (dotaz čeká až 5 sekund), zbytek appky zůstane plynulý - dřív se GUI na tu dobu úplně zaseklo hned po otevření stránky.
+- Appka při ukončení počká, až se případně ještě běžící síťový dotaz na počasí dokončí, než se okno doopravdy zavře - bez toho hrozil tvrdý pád při zavírání appky uprostřed dotazu.
+
 ## Kiosk režim (bez GNOME, automatický start)
 Pro nasazení v autě appka nepotřebuje kolem sebe celý desktop (GNOME/XFCE/KDE) - jen X server a appku samotnou přes celou obrazovku. Ve složce `kiosk/` je připravený jednorázový instalátor, který:
 
@@ -306,7 +318,7 @@ Pro nasazení v autě appka nepotřebuje kolem sebe celý desktop (GNOME/XFCE/KD
 2. Nastaví automatické přihlášení na tty1 (žádné zadávání hesla).
 3. Nainstaluje odlehčený okenní manažer *matchbox* (žádný panel, žádná plocha - jen správa oken, aby fungovala i okna Nastavení Wi-Fi/Bluetooth).
 4. Nainstaluje a nastaví dotykovou klávesnici *onboard* (viz níže).
-5. Nainstaluje podporu pro Bluetooth audio (`bluez` + `pulseaudio-module-bluetooth`/`libspa-0.2-bluetooth`), aby ikonka Bluetooth v docku mohla desku zviditelnit a telefon na ni mohl streamovat zvuk.
+5. Nainstaluje podporu pro Bluetooth audio (`bluez` + `pulseaudio-module-bluetooth`/`libspa-0.2-bluetooth`), aby telefon mohl na desku streamovat hudbu a modul BT Hudba mohl desku zviditelnit pro párování.
 6. Appku spustí automaticky přes `startx` hned po přihlášení, na celou obrazovku.
 
 Balíčky, které kiosk režim navíc potřebuje, jsou v sekci "Potřebné knihovny" výše ("Jen pro kiosk režim"). Instalátor si je nainstaluje sám, ruční instalace není potřeba.
@@ -352,4 +364,4 @@ Pokud appku spouštíš i mimo kiosk režim, s běžícím GNOME desktopem, potl
 gsettings set org.gnome.SessionManager logout-prompt false
 ```
 
-*Jedná se o verzi 14.*
+*Jedná se o verzi 15.*

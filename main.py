@@ -70,7 +70,7 @@ YouTubeMusicApp = _safe_import("youtube_music", "YouTubeMusicApp")
 import web
 import DAB
 import navigace
-from app_launcher import set_bluetooth_discoverable, toggle_onscreen_keyboard
+from app_launcher import toggle_onscreen_keyboard
 
 EXTERNAL_LAUNCHERS = {
     "web": web.launch,
@@ -323,15 +323,13 @@ class MainWindow(QWidget):
         layout.addSpacing(10)
         layout.addWidget(self._make_dock_divider())
         layout.addSpacing(10)
-        layout.addWidget(self._make_bluetooth_button())
-        layout.addSpacing(6)
         layout.addWidget(self._make_keyboard_button())
 
         layout.addStretch()
         return bar
 
     def _make_dock_divider(self):
-        # Thin vertical separator so the Bluetooth quick-action reads as
+        # Thin vertical separator so the keyboard quick-action reads as
         # "not a page" and is visually set apart from the app icons.
         line = QFrame()
         line.setObjectName("dockDivider")
@@ -360,21 +358,6 @@ class MainWindow(QWidget):
         btn.setCheckable(True)
         btn.clicked.connect(lambda: self.go_to("home"))
         self.dock_buttons["home"] = btn
-        return btn
-
-    def _make_bluetooth_button(self):
-        # Toggles Bluetooth discoverable/pairable mode directly (so a
-        # phone can find and connect to THIS device to stream audio to
-        # it) - checkable so it visibly lights up while active. For
-        # managing/removing already-paired devices, see Nastavení.
-        btn = QToolButton()
-        btn.setObjectName("dockIcon")
-        btn.setIcon(QIcon(os.path.join(ICON_PATH, "bluetooth.png")))
-        btn.setIconSize(QSize(24, 24))
-        btn.setFixedSize(40, 40)
-        btn.setToolTip("Bluetooth - zviditelnit pro párování z telefonu")
-        btn.setCheckable(True)
-        btn.toggled.connect(lambda checked: set_bluetooth_discoverable(checked))
         return btn
 
     def _make_keyboard_button(self):
@@ -513,6 +496,15 @@ class MainWindow(QWidget):
             widget = self.page_widget.get(app_id)
             if widget is not None and hasattr(widget, "stop_playback"):
                 widget.stop_playback()
+
+        # Weather's fetch runs in a background QThread - if one is still
+        # in flight when the app quits, Qt would try to destroy it while
+        # running, which is a hard crash ("QThread: Destroyed while
+        # thread is still running"). Give it a moment to finish first.
+        weather = self.page_widget.get("weather")
+        fetcher = getattr(weather, "_fetcher", None)
+        if fetcher is not None and fetcher.isRunning():
+            fetcher.wait(3000)
 
         event.accept()
 

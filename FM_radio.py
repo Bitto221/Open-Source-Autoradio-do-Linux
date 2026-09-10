@@ -183,11 +183,15 @@ class FmRadio(QWidget):
         self.freq = value / 10
         self.label.setText(f"{self.freq:.1f} MHz")
         self.freq_timer.start()
-        self.refresh_presets()
 
     def _restart_if_playing(self):
         if self.is_playing:
             self.start_radio()
+        # Debounced along with the restart above - restyling 6 preset
+        # buttons (unpolish/polish) on every single tick while dragging
+        # the slider was a needless stutter source; a highlight that
+        # settles ~0.5s after the drag stops is imperceptible here.
+        self.refresh_presets()
 
     # ------------------------------------------------------------------
     # presets

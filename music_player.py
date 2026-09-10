@@ -74,9 +74,20 @@ class MusicPlayer(QWidget):
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_progress)
-        self.timer.start(400)
 
         self.setStyleSheet(style.stylesheet())
+
+    def showEvent(self, event):
+        # Playback itself (VLC) keeps running regardless - this timer
+        # only drives the on-screen progress bar, so there's no reason
+        # to keep polling it while some other page is on screen.
+        super().showEvent(event)
+        self.update_progress()
+        self.timer.start(400)
+
+    def hideEvent(self, event):
+        super().hideEvent(event)
+        self.timer.stop()
 
     def select_song(self):
         # Uses the same simple static dialog call as video.py (which
