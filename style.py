@@ -395,6 +395,30 @@ def stylesheet(color=None):
         color: #0a0a12;
         border: 1px solid {glow};
     }}
+
+    QListWidget#queueList {{
+        background-color: rgba(10, 10, 18, 210);
+        border: 1px solid {dim};
+        border-radius: 14px;
+        color: #e8e8f0;
+        font-size: 14px;
+        padding: 4px;
+    }}
+
+    QListWidget#queueList::item {{
+        padding: 6px 10px;
+        border-radius: 8px;
+    }}
+
+    QListWidget#queueList::item:selected {{
+        background-color: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 {glow}, stop:1 {color});
+        color: #0a0a12;
+        font-weight: bold;
+    }}
+
+    QListWidget#queueList::item:hover:!selected {{
+        background-color: rgba(255,255,255,18);
+    }}
     """
 
 

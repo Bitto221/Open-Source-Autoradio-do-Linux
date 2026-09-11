@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Autoradio Bluetooth Agent
+Comment=Automaticky potvrzuje párování Bluetooth zařízení (telefonu) - GNOME má obvykle svého vlastního agenta, tenhle běží jako záloha
+Exec=bt-agent -c NoInputNoOutput
+X-GNOME-Autostart-enabled=true
+NoDisplay=true
+Terminal=false

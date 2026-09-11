@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Autoradio
+Comment=Spustí Autoradio automaticky po přihlášení, na celou obrazovku přes GNOME
+Exec=__APP_DIR__/kiosk/run_autoradio.sh
+X-GNOME-Autostart-enabled=true
+NoDisplay=true
+Terminal=false

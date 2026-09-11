@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, QTimer
 
 import style
-from app_launcher import open_bluetooth_manager, open_wifi_settings as _open_wifi_settings
+from app_launcher import open_audio_output_settings, open_wifi_settings as _open_wifi_settings
 
 
 class Settings(QWidget):
@@ -51,7 +51,7 @@ class Settings(QWidget):
 
         row1 = QHBoxLayout()
         row1.addWidget(self.wifi_section())
-        row1.addWidget(self.bluetooth_section())
+        row1.addWidget(self.audio_output_section())
         main.addLayout(row1)
 
         row2 = QHBoxLayout()
@@ -79,17 +79,17 @@ class Settings(QWidget):
     def open_wifi_settings(self):
         _open_wifi_settings()
 
-    def bluetooth_section(self):
-        box = self.section_box("Bluetooth")
+    def audio_output_section(self):
+        box = self.section_box("Výstup zvuku")
 
-        btn = QPushButton("Otevřít nastavení Bluetooth")
-        btn.clicked.connect(self.open_bluetooth_settings)
+        btn = QPushButton("Vybrat výstupní zařízení")
+        btn.clicked.connect(self.open_audio_output)
 
         box.layout().addWidget(btn)
         return box
 
-    def open_bluetooth_settings(self):
-        open_bluetooth_manager()
+    def open_audio_output(self):
+        open_audio_output_settings()
 
     def audio_section(self):
         box = self.section_box("Zvuk")

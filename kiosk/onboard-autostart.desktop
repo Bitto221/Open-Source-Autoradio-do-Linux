@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Onboard
+Comment=Dotyková klávesnice - alternativa/doplněk k vestavěné GNOME klávesnici, spolehlivěji reaguje na focus v naší appce a webových stránkách
+Exec=onboard
+X-GNOME-Autostart-enabled=true
+NoDisplay=true
+Terminal=false

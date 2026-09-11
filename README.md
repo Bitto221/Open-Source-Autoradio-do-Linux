@@ -1,139 +1,73 @@
 Open Source Autoradio do Linux
 ==============================
-
-## Novinky ve verzi 15 (oprava sekání appky, sloučení Bluetooth ikonek)
-- **Oprava sekání appky** - modul BT Hudba dělal blokující D-Bus dotaz na pozadí každých 1,5 s bez ohledu na to, jaká stránka byla zrovna zobrazená, přímo v GUI vlákně - projevovalo se to jako pravidelné krátké zaseknutí celé appky. Teď se dotazuje jen dokud je stránka opravdu vidět. Stejná oprava aplikovaná na progress bar u Hudby. FM Rádio navíc přestalo přebarvovat tlačítka oblíbených stanic při každém posunu posuvníku frekvence (jen po jeho zastavení). Síťový dotaz na počasí navíc přesunutý do samostatného vlákna, ať neblokuje GUI, když je otevření stránky Počasí (a appka teď při zavírání počká, až se případný běžící dotaz dokončí, aby nešlo o tvrdý pád). Podrobnosti v nové sekci Výkon.
-- **Zrušená samostatná ikonka Bluetooth v docku** - appka teď má v dolní liště jen jednu ikonku s Bluetooth tématem (BT Hudba). Tlačítko "Zviditelnit pro párování" se přesunulo dovnitř modulu BT Hudba, kam kontextově patří.
-
-## Novinky ve verzi 14 (zásadní změna - odebrání Map, nový BT Hudba modul)
-- **Vestavěné Mapy odebrány** - navigaci už řeší modul Navigace (GNOME Maps), druhý mapový modul byl zbytečná duplicita. Soubor `map.py` i jeho ikona jsou pryč, `python3-pyqt5.qtwebengine` teď v README figuruje jen jako závislost YouTube/YouTube Music.
-- **Nový modul BT Hudba** nahrazuje tlačítko Map - ukazuje název skladby/interpreta/alba a stav přehrávání z telefonu streamujícího hudbu přes Bluetooth, plus tlačítka Předchozí/Přehrát-Pauza/Další. Čte a ovládá to přes BlueZ AVRCP (`org.bluez.MediaPlayer1` na D-Bus) - funguje s jakýmkoliv Bluetooth adaptérem, který BlueZ vidí, včetně obyčejného USB dongle (řeší se tím i to, že vestavěný Bluetooth na Orange Pi 5 Pro je nespolehlivý). Nová závislost: `python3-dbus`.
-
-## Novinky ve verzi 13 (podrobný postup pro GPS VK-162)
-- **Určování polohy s VK-162** - sekce Navigace v README přepsaná na konkrétní, ověřený postup šitý na míru VK-162 (u-blox čip, `/dev/ttyACM0`, 9600 baud): ověření hardwaru přes `gpsd`/`cgps`, propojení s GeoClue2 přes nástroj `gps-share` (postavený přímo pro tenhle účel, běží jako systemd služba), konfigurace GeoClue2 přes `/etc/geoclue/conf.d/`, a ověření přes `where-am-i` demo nástroj ještě před otevřením GNOME Maps.
-
-## Novinky ve verzi 12 (potvrzené opravy z reálného nasazení)
-- **welle.io - potvrzený přesný fix pro Qt6** - podle skutečné chybové hlášky z Orange Pi 5 Pro (`module "QtCore" is not installed`) stačí `sudo apt install qml6-module-qtcore qml6-module-qtquick-dialogs`. Qt5 varianta zůstává jako záloha pro starší systémy.
-- **Fyzické tlačítko napájení** - nová sekce v Kiosk režimu s nastavením, aby stisk vypínacího tlačítka rovnou vypnul zařízení bez čekání na potvrzovací dialog (`HandlePowerKey=poweroff` v `systemd-logind`, plus potlačení GNOME potvrzovacího dialogu pro případ běhu mimo kiosk režim).
-
-## Novinky ve verzi 11 (druhé kolo oprav po testu na zařízení)
-- **welle.io (DAB) se nespouštěl** - je to samostatná Qt/QML appka a potřebuje QML runtime moduly navíc, které jsem v jedné z dřívějších verzí omylem vyřadil z README (kontroloval jsem tehdy jen, co používá náš vlastní Python kód, a přehlédl, že tenhle konkrétní balíček je potřeba pro welle.io samotné). Vráceno zpět + přidaný návod, jak si přesně přečíst z terminálu, který konkrétní modul chybí.
-- **Určování polohy v GNOME Maps s USB GPS přijímačem** - přidaný podrobný postup (`gpsd` + ověření přes `cgps`, propojení s GeoClue2) do sekce Navigace v README.
-- **Bluetooth přehrávání hudby z telefonu pořád nešlo** - chyběl běžící "agent", který by potvrzoval příchozí párování (samotné zviditelnění nestačí). Kiosk instalátor teď navíc nainstaluje `bluez-tools` a na pozadí spouští `bt-agent`, který páry potvrzuje automaticky.
-
-## Novinky ve verzi 10 (opravy po testu na reálném zařízení)
-- **Hudební přehrávač**: tlačítko „+" neotvíralo dialog pro výběr souboru pod kiosk prostředím (matchbox) - vynucený `DontUseNativeDialog` + velikost dialogu shodná s celoobrazovkovým hlavním oknem způsobovaly, že se dialog otevřel za hlavním oknem. Přepsáno na stejné, ověřeně funkční volání jako u Videa.
-- **Počasí**: po načtení dat (velká ikona + digitální font) mohl layout narůst nad dostupnou výšku a zatlačit dolní lištu mimo obrazovku. Zúžený layout Počasí + přidaná pojistka v `main.py` (pevný strop výšky obsahové oblasti), která tohle napříč všemi stránkami znemožňuje do budoucna.
-- **Bluetooth**: ikonka v docku teď dělá něco jiného než tlačítko v Nastavení - přepíná viditelnost/párovatelnost desky (`bluetoothctl discoverable/pairable`), aby ji telefon našel a mohl na ni streamovat zvuk (deska jako Bluetooth reproduktor / A2DP sink), místo aby jen otevírala GNOME panel pro správu spárovaných zařízení. Doplněné potřebné systémové balíčky pro Bluetooth audio.
-- **RTL-SDR V4**: upřesněná poznámka v README - na testovaném zařízení funguje běžný balíček `rtl-sdr` s V4 dongle bez úprav, ovladač ze zdroje je potřeba jen výjimečně.
-
-## Novinky ve verzi 9
-- **README**: doplněné varování a přesný postup pro **RTL-SDR V4** - balíčkový `rtl-sdr` z apt repozitářů tenhle dongle často neumí správně inicializovat (jiný tuner než starší V3), takže by FM Rádio modul mohl hlásit prázdné pásmo, špatnou frekvenci nebo zkreslený zvuk. Přidaný návod na instalaci aktualizovaného ovladače (fork RTL-SDR Blog) ze zdroje, včetně blacklistu výchozího DVB-T ovladače.
-
-## Novinky ve verzi 8
-- **README**: sekce "Potřebné knihovny" teď obsahuje i balíčky pro kiosk režim (`xserver-xorg`, `matchbox-window-manager`, `onboard`...), včetně vlastního `apt install` příkazu - dřív byly zmíněné jen uvnitř instalačního skriptu, teď je vidět úplný přehled na jednom místě.
-
-## Novinky ve verzi 7
-- Přidaná složka **kiosk/** s jednorázovým instalátorem (`install-kiosk.sh`) pro nasazení bez GNOME desktopu - appka po zapnutí desky naskočí sama na celou obrazovku, žádná přihlašovací obrazovka, žádný spuštěný gnome-shell. GDM se dá kdykoliv zase zapnout zpět, viz README sekce "Kiosk režim".
-- Přidaná **dotyková klávesnice** (`onboard`) - v kiosk režimu se nastaví tak, aby se sama zobrazovala při psaní kdekoliv v appce (vlastní dialogy, vestavěné YouTube/Mapy) i v externích GTK oknech (např. zadání Wi-Fi hesla). V dolní liště přibyla i ikonka pro ruční zapnutí/vypnutí klávesnice, kdyby se automatické zobrazení někde nespustilo.
-
-## Novinky ve verzi 6
-- Kompletní kontrola kódu a opravy drobných nekonzistencí.
-- **README opraveno** - sekce "Potřebné knihovny" teď odpovídá tomu, co appka opravdu volá (odebrané nepoužívané položky jako QML moduly, Pillow, OSRM/docker; doplněné skutečně používané `python3-pyqt5.qtwebengine`, `rtl-sdr`, `wmctrl`, `gnome-control-center`). Opravena i sekce o YouTube (už neběží přes Chromium, ale vestavěně) a Navigaci (žádné OSRM, jen spouštěč GNOME Maps).
-- **Vyšperkovaný design** - jemné gradienty na tlačítkách, dlaždicích a liště namísto plochých barev, digitální hodiny v horní liště dostaly vlastní "LCD" rámeček, frekvence FM rádia je teď v podsvíceném displeji připomínajícím skutečné autorádio, počasí má hezčí "chipy" pro vlhkost/vítr, a mezi ikonami aplikací a Bluetooth zkratkou v docku přibyla tenká oddělovací čárka. Vše zůstává odlehčené (žádné náročné grafické efekty), aby appka běžela svižně i na slabším ARM hardwaru.
-
-## Novinky ve verzi 5
-- **Spotify odebrán.** Nefungoval kvůli tomu, že Spotify Web Player v embedded prohlížeči hlásí chybu (typicky kvůli DRM/Widevine, které Qt WebEngine defaultně nemá) - takže jsem ho z appky úplně odstranil, aby zbytečně nezabíral místo na ploše.
-- **Oprava hudebního přehrávače** - tlačítko „+" (výběr skladby) se dřív po spuštění první písničky schovalo a už nešlo přidat/změnit skladbu bez restartu appky. Teď zůstává vidět a funkční po celou dobu.
-- Menší oprava odolnosti: pokud se aplikaci (např. hudebnímu přehrávači kvůli VLC) nepodaří inicializovat i přesto, že modul jde naimportovat, appka to teď zachytí a zobrazí hlášku „není dostupné" místo pádu celé aplikace.
-- K **OpenTune** (open-source YouTube Music klient pro Android) - prověřil jsem to a jde o reálný projekt, ale jeho webová verze běží přes cizí cloudovou emulaci (Appetize.io), která má jen pár desítek minut zdarma měsíčně, potřebuje stálé rychlé připojení a není myšlená pro celodenní používání v autě. Proto jsem místo toho embedovaný Android emulátor nedělal - appka už ale obsahuje vestavěné **YouTube Music**, což je přesně ten stejný katalog, který OpenTune sám používá, jen bez zbytečné emulace.
-
-## Novinky ve verzi 4
-- **Spotify** přibyl jako další aplikace - běží stejně jako YouTube/YouTube Music vestavěně přes `QWebEngineView` (Spotify Web Player), takže funguje i na ARM zařízeních bez instalace nativního Spotify klienta.
-- **Bluetooth ikonka** se přesunula z horní lišty do spodního docku a má teď stejný styl jako ostatní ikonky aplikací (černobílá "sticker" ikona, žádný modrý odznak).
-- Tlačítka **Wi-Fi** a **Bluetooth** v Nastavení (i ikonka v docku) teď primárně otevírají nativní panely **GNOME nastavení** (`gnome-control-center wifi` / `gnome-control-center bluetooth`), protože aplikace běží na GNOME. Pokud by `gnome-control-center` chybělo, zkusí se `nm-connection-editor` / `blueman-manager` jako záloha.
-
-## Novinky ve verzi 3
-- **YouTube a YouTube Music** už neotevírají samostatné okno Chromia. Běží přímo vestavěné v aplikaci (přes `QWebEngineView`, stejně jako Mapy), takže naskočí rychle a mají stejný formát/rámeček jako ostatní stránky - žádná cizí horní lišta prohlížeče.
-- Těžší stránky (YouTube, YouTube Music, Mapy, Počasí) se teď sestavují **líně** - až při prvním otevření, ne hned při startu. Aplikace tak naskočí rychleji.
-- **FM Rádio** umí ukládat oblíbené stanice (až 6) - tlačítkem *Uložit stanici* nebo klepnutím na prázdný slot `+`. Klepnutím na uloženou stanici se na ni rádio naladí, `🗑` uloženou stanici smaže.
-- V horní liště přibyla **ikonka Bluetooth** pro rychlé otevření párování/nastavení zvukového výstupu přes Bluetooth (stejná akce jako v Nastavení, jen o klepnutí blíž).
-
-## Novinky ve verzi 2 (jednotné okno + retro vzhled)
-Aplikace nyní běží jako **jedno stálé okno** (`main.py`), ne jako sada oken, která se pořád znovu spouští jako nový python proces. Vlastní PyQt aplikace (Hudba, FM Rádio, Video, Počasí, Nastavení, Vzhled, Mapy) jsou "vestavěné stránky" v `QStackedWidget` a přepínají se okamžitě bez zakládání nového procesu. Jen skutečně externí programy (Chromium pro YouTube/YT Music/Web, welle.io pro DAB, gnome-maps pro Navigaci) se pořád spouští jako samostatný proces, protože jinak to nejde.
-
-Přibyla i **spodní lišta (dock)** s domečkem uprostřed pro rychlý návrat na hlavní obrazovku a rychlé přepínání mezi ostatními aplikacemi jedním klepnutím - podobně jako u Android autorádií. Nahoře je stavový pruh s datem, časem a názvem aktuální stránky. Celý vzhled je předělaný do tmavého "retro" digitálního stylu (`style.py`), který se dá stále přebarvit v modulu **Vzhled** - barva i tapeta se teď navíc aplikují okamžitě, bez restartu aplikace.
-
-Spuštění je stále stejné - `python3 main.py`.
-
-## Základní moduly
-Tento program obsahuje spoustu různých modulů. Většina běží v Pythonu a využívá PyQt5 s příslušnými potřebnými moduly. Hlavní desktop aplikace je **main.py**. Po spuštění tohoto kódu se spustí okno, kde lze vybrat různé aplikace. Ikony použité v desktop aplikaci jsem stáhnul z https://icons8.com/, ikony pro Domů, Bluetooth a BT Hudbu jsem dokreslil ve stejném stylu.
+Autorádio pro Linux (Orange Pi 5 Pro a podobné desky), postavené na PyQt5. Běží jako jedno stálé okno (`main.py`) - jednotlivé aplikace jsou "vestavěné stránky" v `QStackedWidget`, mezi kterými appka přepíná okamžitě, bez zakládání nového procesu. Jen skutečně externí program (GNOME Maps pro Navigaci) se spouští jako samostatný proces, protože jinak to nejde - ale i ten appka přepne do stejného fullscreen vzhledu jako zbytek appky.
 
 ![desktop](printscreen/desktop.jpg)
 
-Na hlavní obrazovce je nahoře stavový pruh s *datem* a *časem* a dole lišta (dock) pro rychlé přepínání mezi aplikacemi.
+## Základní moduly
+Většina modulů běží celá v Pythonu a využívá PyQt5. Ikony použité v appce jsem stáhnul z https://icons8.com/, ikony pro Domů, Bluetooth a BT Hudbu jsem dokreslil ve stejném stylu. Nahoře je stavový pruh s *datem* a *časem*, dole lišta (dock) pro rychlé přepínání mezi aplikacemi - všechny moduly mají společný *StyleSheet* (`style.py`), takže jde vzhled celé appky změnit na jednom místě.
 
 Hudební přehrávač
 ----------------------------------
-Prvním modulem je hudební přehrávač lokální hudby, který je celý napsaný v Pythonu. Všechny moduly mají společný *StyleSheet*.
+Přehrávač lokální hudby (mp3/wav/ogg/flac - cokoliv, co zvládne VLC), napsaný celý v Pythonu nad `python-vlc`. Tlačítko "+" umožňuje vybrat víc skladeb najednou - vytvoří se z nich fronta, kterou appka po dohrání aktuální skladby sama posouvá na další. Kliknutím na skladbu v seznamu se na ni dá skočit přímo, tlačítka Předchozí/Další frontu posouvají ručně, koš vyprázdní celou frontu. Progress bar (a s ním spojené pravidelné dotazování VLC na pozici) běží jen dokud je stránka Hudba opravdu na obrazovce - přehrávání samotné jede dál na pozadí i při přepnutí na jinou appku.
 
 ![desktop](printscreen/music_player.jpg)
 
-Vzhled všech aplikací je jednotný a čistý. Výhodou je, že v případě potřeby jiného stylu lze tento styl jednoduše změnit pro všechny moduly najednou v souboru *style.py*.
-
 Youtube a YouTube Music
 ----------------------------------
-YouTube a YouTube Music běží přímo vestavěné v aplikaci přes `QWebEngineView` - žádné samostatné okno Chromia, žádná cizí horní lišta prohlížeče. Sestavují se navíc líně, až při prvním otevření, takže appka naskočí rychle. Adresu, na kterou se stránka otevře, lze změnit v `youtube.py` / `youtube_music.py` (proměnná `URL`).
+Běží přímo vestavěné v aplikaci přes `QWebEngineView` - žádné samostatné okno Chromia, žádná cizí horní lišta prohlížeče kolem. Sestavují se líně, až při prvním otevření (ne hned při startu appky), takže appka naskočí rychle - jakmile jednou stránku otevřeš, zůstává už sestavená a další přepnutí na ni je okamžité. Adresu, na kterou se stránka otevře, lze změnit v `youtube.py` / `youtube_music.py` (proměnná `URL`).
 
 FM Radio
 ----------------------------------
-Dalším modulem je FM Rádio, napsané taky celé v Pythonu. Pro funkci tohoto rádia je potřeba SDR dongle. Já jsem si vybral RTL-SDR V4. Nejdůležitější věc je ale anténa, která dělá tak 80 % kvality zvuku. Oblíbené stanice si appka ukládá do souboru *fm_presets.json*.
+FM Rádio, napsané celé v Pythonu nad `rtl_fm` (z balíčku `rtl-sdr`) a `aplay`. Pro funkci je potřeba SDR dongle - otestováno s RTL-SDR V4 (viz poznámka o V4 v sekci Potřebné knihovny, kdyby přesto nastal problém se signálem). Nejdůležitější věc pro kvalitu příjmu je ale anténa, která dělá tak 80 % výsledného zvuku.
 
-**Poznámka k V4:** RTL-SDR V4 používá jiný tuner (R828D) než starší V3. Na testovaném zařízení (viz sekce "Potřebné knihovny") funguje běžný balíček `rtl-sdr` s V4 dongle bez problémů. Pokud by přesto FM Rádio hlásilo žádný signál, špatnou frekvenci nebo zkreslený zvuk, řešením je aktualizovaný ovladač - viz box v sekci "Potřebné knihovny".
+Až 6 oblíbených stanic se dá uložit tlačítkem "Uložit stanici" (nebo klepnutím na prázdný slot), appka je drží v souboru *fm_presets.json* i po restartu. Přebarvování tlačítek oblíbených stanic (aby se zvýraznila ta aktuálně naladěná) se přepočítává až po zastavení posuvníku frekvence na 0,5 s, ne při každém posunu - jinak by to při plynulém tažení dělalo zbytečnou práci desítkykrát za sekundu.
 
 ![desktop](printscreen/FM_radio.jpg)
 
 Video přehrávač
 ----------------------------------
-Dalším modulem je jednoduché okno jako spouštěč VLC přehrávače. Uživatel vyvolá okno, kde si vybere soubor, který chce přehrát, a ten se pak spustí pomocí VLC na celou obrazovku.
+Jednoduché okno jako spouštěč VLC přehrávače - appka jen zprostředkuje výběr souboru, samotné přehrávání pak běží ve vlastním okně VLC na celou obrazovku. Video by šlo teoreticky vykreslovat přímo uvnitř appky (embedovaný VLC widget), ale spolehlivost takového přístupu silně závisí na konkrétní kombinaci GPU/mesa ovladačů na ARM desce - předání práce samotnému VLC (který má vlastní, dobře odladěný pipeline pro hardwarové dekódování) je robustnější volba.
 
 DAB
 ----------------------------------
-Další modul není můj vlastní program - na přehrávání DAB jsem použil **Welle.io**. Je to jednoduchý program, který funguje skvěle na přehrávání DAB z RTL-SDR.
+Vlastní DAB/DAB+ modul, napsaný stejným stylem jako ostatní appky - ne jen spouštěč cizího programu. Skutečné DAB/DAB+ demodulování (OFDM, Reed-Solomonovo FEC, MPEG dekódování) je ale seriózní DSP práce, kterou by nedávalo smysl znovu psát od nuly v Pythonu - místo toho appka na pozadí spouští **`welle-cli`** (bezhlavá varianta stejného enginu, který pohání welle.io), a s ním mluví přesně tak, jak appka mluví i s ostatními službami: přes malý webserver, který `welle-cli` sám nabízí.
+
+Jak to funguje: appka spustí `welle-cli -c <kanál> -w 7979` na pozadí, pak se stejně jako modul Počasí (přes `requests`) ptá na `http://127.0.0.1:7979/mux.json`, dokud `welle-cli` nenajde na daném kanálu nějaké stanice. Jakmile je najde, appka je ukáže v seznamu - klepnutím na stanici appka pustí `http://127.0.0.1:7979/mp3/<SID>` přes VLC (`python-vlc`), stejně jako by pustila lokální soubor v Hudbě. Kanál se vybírá ze standardního rastru Band III (5A-13F) v rozbalovací nabídce.
+
+Dotazování na seznam stanic (`/mux.json`) se stejně jako u BT Hudby zastavuje, když stránka DAB není na obrazovce - ale samotné přehrávání (stejně jako u FM Rádia) běží dál na pozadí i při přepnutí jinam, dokud nezmáčkneš Stop.
+
+**Důležité:** DAB a FM Rádio sdílí stejný SDR dongle - najednou může demodulovat jen jeden z nich. Pokud `welle-cli` po klepnutí na "Vyhledat stanice" hned spadne (appka to pozná a napíše), zkontroluj, že zrovna nehraje FM Rádio.
 
 Počasí
 ----------------------------------
-Dalším modulem je počasí, které je také vytvořené celé v Pythonu. Funguje to tak, že modul má svůj API klíč, kterým se hlásí na stránku https://openweathermap.org/, ze které bere data. V Pythonu je nastavené, aby to bralo údaje pro Prahu. Bere to údaje o teplotě, rychlosti větru, vlhkosti a o tom, zda je zataženo nebo polojasno atd., a k tomu přiřazuje odpovídající obrázek ze složky icons/weather. Všechny tyto údaje si appka ukládá do souboru *weather_cache.json*. Když není připojení k internetu, načte údaje z tohoto souboru a vypíše je i s datem a časem posledního uložení.
+Modul má svůj API klíč, kterým se hlásí na https://openweathermap.org/, odkud bere data pro Prahu (teplota, rychlost větru, vlhkost, oblačnost) a k tomu přiřazuje odpovídající obrázek ze složky `icons/weather`. Síťový dotaz běží v samostatném vlákně (`QThread`), takže i kdyby internet byl pomalý nebo úplně nedostupný, zbytek appky zůstane plynulý. Všechny naposledy stažené údaje appka ukládá do *weather_cache.json* - když není připojení k internetu, načte je odtamtud a napíše k nim datum a čas posledního uložení, ať je jasné, že jde o starší data.
 
-![desktop](printscreen/pocasi.jpg)
-
-Vyhledávač
+Vyhledávač (Web)
 ----------------------------------
-Dalším modulem je jenom spouštěč Chromium Browseru (obecné vyhledávání - google.com).
+Obecné prohlížení webu - stejně jako YouTube/YouTube Music běží vestavěně přes `QWebEngineView`, ne jako samostatný proces Chromia (dřívější řešení bylo znatelně pomalejší na otevření a jako samostatné okno ukazovalo GNOME lištu kolem sebe). Výchozí adresa (`https://www.google.com`) se dá změnit v `web.py` (proměnná `URL`).
 
 Nastavení
 ----------------------------------
-Dalším modulem je nastavení. Tlačítka Wi-Fi a Bluetooth otevírají přímo příslušný panel nativního **GNOME nastavení** (`gnome-control-center wifi` / `gnome-control-center bluetooth`), protože appka cílí na GNOME desktop. Pokud by `gnome-control-center` na zařízení chybělo, zkusí se jako záloha `nm-connection-editor` / `blueman-manager`. Stejná Bluetooth akce je pro rychlý přístup i jako ikonka ve spodní liště (docku). Program dál dokáže ovládat hlasitost pomocí knihovny *pulseaudio* (`pactl`). Poslední tlačítko je na vypnutí desktop aplikace. Tato funkce je určená pro projekty, kde poběží aplikace na fullscreen a nebude ji možno jinak vypnout.
+Tlačítko Wi-Fi otevírá přímo panel nativního **GNOME nastavení** (`gnome-control-center wifi`), pokud by chybělo, zkusí se jako záloha `nm-connection-editor`. Tlačítko **Výstup zvuku** otevírá panel Zvuku (`gnome-control-center sound`, záložně `pavucontrol`) pro výběr výstupního zařízení (jack, USB zvukovka, HDMI, spárovaný Bluetooth reproduktor...) - párování Bluetooth samotné se řeší přímo v modulu BT Hudba, tady je to jen výběr, kam má jít zvuk. Posuvník hlasitosti ovládá `pactl` a je debouncovaný stejně jako FM přebarvování - `pactl` se zavolá až po zastavení tažení, ne při každém pixelu. Poslední tlačítko appku rovnou ukončí - určené pro nasazení, kde appka běží na celou obrazovku a jinak by nebyla čím zavřít.
 
 ![desktop](printscreen/nastaveni.jpg)
 
 Barvy (Vzhled)
 ----------------------------------
-Dalším modulem je ovládání témat. Na výběr je 6 barev: **fialová**, **červená**, **modrá**, **zelená**, **oranžová** a **růžová**. K jednotlivým barvám patří příslušné tapety. Nová barva i tapeta se aplikují okamžitě, bez restartu appky.
+Ovládání témat - 6 barev (**fialová**, **červená**, **modrá**, **zelená**, **oranžová**, **růžová**), ke každé patří odpovídající tapeta na domovské obrazovce. Nová barva i tapeta se aplikují okamžitě po klepnutí, bez restartu appky - přebarví se rázem celá appka (dock, lišty, tlačítka), protože všechny sdílí jeden centrální `style.py`.
 
 ![desktop](printscreen/barvy.jpg)
 
 BT Hudba
 ----------------------------------
-Nahrazuje dřívější vestavěné Mapy - navigace už řeší modul Navigace (GNOME Maps), takže druhý mapový modul byl zbytečný. Místo toho ukazuje **co se právě přehrává na telefonu připojeném přes Bluetooth** - název skladby, interpreta, album a stav přehrávání, plus tlačítka Předchozí/Přehrát-Pauza/Další. Tlačítko **"Zviditelnit pro párování"** dole na stránce zapíná/vypíná viditelnost desky pro spárování z telefonu - je to jediné tlačítko s Bluetooth tématem v appce mimo Nastavení, žádná samostatná ikonka navíc v docku.
+Ukazuje **co se právě přehrává na telefonu připojeném přes Bluetooth** - název skladby, interpreta, album a stav přehrávání, plus tlačítka Předchozí/Přehrát-Pauza/Další. Tlačítko **"Zviditelnit pro párování"** zapíná/vypíná viditelnost desky pro spárování z telefonu (`bluetoothctl discoverable/pairable on`) - je to jediné tlačítko s Bluetooth tématem v appce, párování a přehrávání zvuku jsou ale ve skutečnosti tři různé věci, které musí fungovat zaráz (zviditelnění, potvrzení párování přes `bt-agent`, a samotný zvukový Bluetooth modul) - podrobný rozpis je v sekci Potřebné knihovny níže, kdyby přehrávání z telefonu nešlo.
 
-Funguje to přes **BlueZ AVRCP** rozhraní (`org.bluez.MediaPlayer1` na systémové D-Bus sběrnici) - jakmile telefon streamuje hudbu do desky přes Bluetooth (A2DP), BlueZ automaticky zpřístupní i informace o přehrávané skladbě a dálkové ovládání, ať už je telefon Android nebo iPhone. Modul se na tohle rozhraní jen dívá, nepotřebuje žádné vlastní párování navíc. Data se obnovují každé 2 sekundy, ale **jen dokud je stránka opravdu na obrazovce** - jakmile appka přepne na jinou stránku, dotazování se samo zastaví a zase naskočí při návratu, aby appka na pozadí zbytečně nezatěžovala systém pravidelnými D-Bus dotazy (viz sekce Výkon níže). Pokud není spárované/streamující zařízení, modul to napíše rovnou na obrazovku místo prázdné stránky.
+Funguje to přes **BlueZ AVRCP** rozhraní (`org.bluez.MediaPlayer1` na systémové D-Bus sběrnici) - jakmile telefon streamuje hudbu do desky přes Bluetooth (A2DP), BlueZ automaticky zpřístupní i informace o přehrávané skladbě a dálkové ovládání, ať už je telefon Android nebo iPhone. Modul se na tohle rozhraní jen dívá, nepotřebuje žádné vlastní párování navíc. Data se obnovují každé 2 sekundy, ale jen dokud je stránka opravdu na obrazovce (viz sekce Výkon) - dřív běželo tohle dotazování na pozadí pořád, což appku pravidelně krátce zasekávalo.
 
 Navigace
 ----------------------------------
-Posledním modulem je navigace - spouštěč nativní aplikace **GNOME Maps** (`gnome-maps`), stejně jako u ostatních skutečně externích programů (welle.io, prohlížeč). Pro plnohodnotné offline trasování by šlo `navigace.py` rozšířit o vlastní offline řešení (např. přes OSRM), ale v aktuální podobě appka žádný takový vlastní navigační modul neobsahuje - `navigace.py` jen otevře/zaostří okno GNOME Maps.
-
-![desktop](printscreen/navigace.jpg)
+Spouštěč nativní aplikace **GNOME Maps** (`gnome-maps`) - appka ho přes `wmctrl` navíc přepne do fullscreen, aby vypadal stejně jako zbytek appky, bez GNOME lišty kolem. Pro určení polohy s USB GPS přijímačem ("GPS mouse") viz podrobný postup níže.
 
 **Určování polohy s GPS přijímačem VK-162 ("GPS mouse", u-blox čip):** GNOME Maps si polohu bere ze systémové služby **GeoClue2**, která o USB GPS zařízení sama o sobě neví. VK-162 je založený na u-blox čipu a hlásí se jako standardní USB sériové zařízení (`/dev/ttyACM0`), takže funguje bez jakýchkoliv driverů - jen ho je potřeba propojit s GeoClue2. Postup:
 
@@ -143,7 +77,7 @@ sudo apt install gpsd gpsd-clients
 sudo gpsd /dev/ttyACM0 -F /var/run/gpsd.sock
 cgps -s
 ```
-(Pokud se VK-162 nahlásí jako jiné zařízení, zjistíš skutečnou cestu přes `ls /dev/ttyACM* /dev/ttyUSB*` po připojení, nebo `dmesg | tail` hned po zapojení.) `cgps` by měl začít ukazovat souřadnice, jakmile přijímač "chytí" satelity - venku i pár desítek sekund, u okna to VK-162 zvládne i uvnitř, v hlubším vnitrozemí budovy nemusí chytit vůbec.
+(Za `/dev/ttyACM0` dosaď skutečné zařízení - zjistíš ho přes `ls /dev/ttyACM* /dev/ttyUSB*` po připojení, nebo `dmesg | tail` hned po zapojení.) `cgps` by měl ukázat souřadnice, jakmile přijímač "chytí" satelity - venku i pár desítek sekund, u okna to VK-162 zvládne i uvnitř, v hlubším vnitrozemí budovy nemusí chytit vůbec.
 
 **2. Propoj GPS s GeoClue2 přes `gps-share`** - malý nástroj postavený přímo pro tenhle účel (na rozdíl od `gpsd` umí data poslat rovnou do GeoClue2 přes unix socket, který GeoClue2 podporuje nativně):
 ```
@@ -185,7 +119,24 @@ EOF
 sudo systemctl restart geoclue
 ```
 
-**5. Ověř, že GeoClue2 polohu skutečně má** (ukáže ji ještě předtím, než vůbec otevřeš GNOME Maps):
+**5. Povol appkám přístup k poloze bez agenta** - GeoClue2 běžně nechá o povolení rozhodovat běžící "agent" (na běžném GNOME desktopu je to gnome-shell, který se zeptá "povolit této appce polohu?"). Pokud appka běží v režimu bez gnome-shellu, žádný agent neexistuje a GeoClue2 by defaultně zamítl úplně všechny požadavky na polohu (`AccessDenied: Geolocation disabled for UID 1000`). Řešení je obejít potřebu agenta explicitním povolením konkrétních aplikací:
+```
+sudo tee /etc/geoclue/conf.d/99-allow-apps.conf > /dev/null << 'EOF'
+[where-am-i]
+allowed=true
+system=false
+users=
+
+[org.gnome.Maps]
+allowed=true
+system=false
+users=
+EOF
+sudo systemctl restart geoclue
+```
+(Pokud appka běží v doporučeném režimu nad GNOME - viz sekce Automatický start - gnome-shell už agenta poskytuje sám a tenhle krok není potřeba.)
+
+**6. Ověř, že GeoClue2 polohu skutečně má** (ukáže ji ještě předtím, než vůbec otevřeš GNOME Maps):
 ```
 sudo apt install geoclue-2-demo
 /usr/libexec/geoclue-2.0/demos/where-am-i
@@ -201,53 +152,34 @@ Tento seznam odpovídá tomu, co appka v aktuální podobě opravdu volá v kód
  - `python3`
  - `python3-pip`
  - `python3-pyqt5` - základ celého UI
- - `python3-pyqt5.qtwebengine` - vestavěné YouTube a YouTube Music (`QWebEngineView`)
- - `python3-vlc` - Python vazby na VLC, používá hudební přehrávač
- - `python3-requests` - modul Počasí (OpenWeatherMap API)
+ - `python3-pyqt5.qtwebengine` - vestavěné YouTube, YouTube Music a Web (`QWebEngineView`)
+ - `python3-vlc` - Python vazby na VLC, používá hudební přehrávač i DAB modul (přehrávání staženého MP3 streamu z `welle-cli`)
+ - `python3-requests` - modul Počasí (OpenWeatherMap API) i DAB (dotazování `welle-cli` na seznam stanic)
  - `python3-dbus` - modul BT Hudba (čte info o přehrávané skladbě a ovládá přehrávání přes BlueZ AVRCP na systémové D-Bus sběrnici)
 
 **Systémové programy, které appka spouští:**
- - `vlc` - přehrávání videa (Video modul) i podkladová knihovna pro `python3-vlc` (hudební přehrávač)
- - `rtl-sdr` (poskytuje `rtl_fm`) + SDR dongle a anténa - FM Rádio modul. Funguje otestovaně i s RTL-SDR V4 (viz poznámka o V4 u FM Radio modulu výše a box níže, kdyby přesto byly problémy se signálem).
+ - `vlc` - přehrávání videa (Video modul) i podkladová knihovna pro `python3-vlc` (Hudba, DAB)
+ - `rtl-sdr` (poskytuje `rtl_fm`) + SDR dongle a anténa - FM Rádio modul. Funguje otestovaně i s RTL-SDR V4 (viz poznámka o V4 níže, kdyby přesto byly problémy se signálem).
  - `alsa-utils` (poskytuje `aplay`) - výstup zvuku z FM Rádia
- - `welle.io` - DAB modul. **Je to samostatná Qt/QML aplikace** (ne náš Python kód) a potřebuje k běhu i QML runtime moduly - bez nich se buď vůbec nespustí, nebo naskočí prázdné okno. Balíček `welle.io` sám o sobě tyhle QML moduly na některých systémech nestrhne jako závislost, takže je čti jako samostatný požadavek - viz box hned pod hlavním instalačním příkazem níže.
+ - `welle.io` (balíček poskytuje i `welle-cli`) - DAB modul. Appka používá jen bezhlavou `welle-cli` část, ne GUI aplikaci welle.io samotnou, takže QML runtime moduly (potřebné jen pro GUI) appka nevyžaduje.
  - `gnome-maps` - Navigace modul
- - `gpsd`, `gpsd-clients` - ověření, že GPS přijímač ("GPS mouse") sám o sobě funguje, nezávisle na GNOME Maps - viz box u modulu Navigace výše
+ - `gpsd`, `gpsd-clients` - ověření, že GPS přijímač ("GPS mouse") sám o sobě funguje, nezávisle na GNOME Maps - viz modul Navigace výše
  - `cargo`, `libudev-dev`, `pkg-config`, `build-essential`, `git` - sestavení `gps-share` ze zdroje (propojuje GPS s GeoClue2/GNOME Maps)
  - `geoclue-2-demo` - ověření, že GeoClue2 (a tedy GNOME Maps) reálně dostává polohu z GPS
- - `chromium-browser` - modul Web (obecné vyhledávání/prohlížení)
- - `wmctrl` - doporučeno pro externí moduly (Web, DAB, Navigace): když je okno už otevřené, appka ho jen přepne do popředí místo spouštění druhé instance. Bez `wmctrl` to pořád funguje, jen se okno pokaždé spustí znovu.
- - `gnome-control-center` - Wi-Fi a Bluetooth v Nastavení (appka cílí na GNOME desktop)
+ - `wmctrl` - doporučeno pro Navigaci: když je okno GNOME Maps už otevřené, appka ho jen přepne do popředí místo spouštění druhé instance, a navíc ho přepne do fullscreen (stejně jako appka samotná), aby kolem něj nebylo vidět GNOME horní lištu. Bez `wmctrl` modul pořád funguje, jen jako běžné okno s GNOME lištou kolem.
+ - `gnome-control-center` - Wi-Fi a Výstup zvuku v Nastavení (appka cílí na GNOME desktop)
  - `network-manager-gnome` (poskytuje `nm-connection-editor`) - záložní Wi-Fi nástroj, pokud by `gnome-control-center` chybělo
- - `blueman` (poskytuje `blueman-manager`) - záložní Bluetooth nástroj, pokud by `gnome-control-center` chybělo
+ - `pavucontrol` - záložní nástroj pro výběr výstupního zařízení zvuku, pokud by `gnome-control-center` chybělo
  - `bluez` (poskytuje `bluetoothctl`) - zviditelnění desky pro párování (tlačítko v modulu BT Hudba) i modul BT Hudba samotný
  - `pulseaudio-module-bluetooth` **nebo** `libspa-0.2-bluetooth` - aby deska uměla přijímat a přehrávat zvuk streamovaný z telefonu přes Bluetooth (A2DP sink); podle toho, jestli systém používá PulseAudio, nebo PipeWire
  - `pulseaudio-utils` nebo `pipewire-pulse` (poskytuje `pactl`) - ovládání hlasitosti v Nastavení
-
-**Bluetooth: párování vs. deska jako Bluetooth reproduktor** - v appce jsou dvě různé věci: tlačítko "Otevřít nastavení Bluetooth" v Nastavení otevírá `gnome-control-center` pro správu/mazání spárovaných zařízení. Tlačítko "Zviditelnit pro párování" v modulu **BT Hudba** dělá něco jiného - zviditelní desku (`bluetoothctl discoverable/pairable on`), aby ji telefon vůbec našel a mohl se k ní připojit a streamovat na ni hudbu (deska pak funguje jako Bluetooth reproduktor / A2DP sink). Obě tlačítka jsou záměrně jen dvě, ne tři - v dolní liště appka teď má jen jednu ikonku s Bluetooth tématem (BT Hudba), aby to nepůsobilo zmatečně.
-
-Aby tohle celé fungovalo, jsou potřeba tři různé věci najednou - pokud přehrávání z telefonu nejde, projdi je popořadě:
-1. **Zviditelnění** - tlačítko v modulu BT Hudba, jen říká telefonu "tady jsem".
-2. **Potvrzení párování** - bez běžícího "agenta" nemá BlueZ, kdo by příchozí párování potvrdil, takže by se telefon nespároval, i když desku najde. V kiosk režimu (`kiosk/install-kiosk.sh`) se o tohle stará `bt-agent` (balíček `bluez-tools`), který běží na pozadí a páry potvrzuje automaticky. Pokud appku spouštíš mimo kiosk skript, spusť si `bt-agent -c NoInputNoOutput &` ručně (nebo párování jednou potvrď přes `gnome-control-center`/`bluetoothctl`).
-3. **Přehrávání zvuku** - i po úspěšném spárování potřebuje systém balíček pro Bluetooth audio (`pulseaudio-module-bluetooth` nebo `libspa-0.2-bluetooth`, viz výše) - bez něj se telefon spáruje, ale zvuk nikam nepůjde. Ověření, že modul opravdu běží: `pactl list modules short | grep bluetooth` (PulseAudio) nebo `wpctl status` (PipeWire - Bluetooth zařízení by se mělo objevit v sekci Audio/Sinks po připojení telefonu).
-
-Pokud i po tomhle telefon nenabídne desku jako reproduktor v přehrávání hudby, zkontroluj na telefonu, že se skutečně připojil profil "Média/Audio" (A2DP), ne jen "Telefonní hovory" (HFP) - některé telefony je nabízí zvlášť.
-
-**Jen pro kiosk režim** (viz sekce "Kiosk režim" níže - běh appky bez GNOME desktopu, s automatickým startem):
- - `xserver-xorg`, `xinit`, `x11-xserver-utils` - holý X server, appka nepotřebuje celý desktop
- - `matchbox-window-manager` - odlehčený okenní manažer (žádný panel, žádná plocha)
- - `unclutter` - schová kurzor myši, když se nehýbe (appka je určená pro dotykovou obrazovku)
- - `onboard` - dotyková klávesnice, samostatně fungující i bez GNOME
- - `at-spi2-core` - aby `onboard` poznal, kdy je aktivní textové pole (auto-show)
- - `dbus-x11` (poskytuje `dbus-launch`) - D-Bus session sběrnice bez desktop prostředí
- - `dconf-cli` - nastavení výchozích hodnot pro `onboard` (auto-show, ukotvení)
 
 Instalace na Ubuntu/Debianu (uprav podle skutečně nainstalovaného desktopu):
 ```
 sudo apt install python3 python3-pip python3-pyqt5 python3-pyqt5.qtwebengine \
     python3-vlc python3-requests python3-dbus vlc rtl-sdr alsa-utils welle.io \
-    gnome-maps chromium-browser wmctrl gnome-control-center \
-    network-manager-gnome blueman bluez bluez-tools pulseaudio-utils
+    gnome-maps wmctrl gnome-control-center network-manager-gnome pavucontrol \
+    bluez bluez-tools pulseaudio-utils
 
 # jedno z těchto dvou, podle toho jestli systém běží na PulseAudio nebo
 # PipeWire (nutné, aby šel na desku streamovat zvuk z telefonu):
@@ -256,22 +188,29 @@ sudo apt install pulseaudio-module-bluetooth
 sudo apt install libspa-0.2-bluetooth
 ```
 
-**Poznámka k welle.io (DAB):** pokud se welle.io nespustí vůbec (ani přímo v terminálu mimo appku), skoro jistě chybí QML moduly - je to Qt/QML aplikace, ne náš Python kód. Spusť `welle-io` přímo v terminálu a přečti si chybovou hlášku - typicky uvidíš přesně `module "XYZ" is not installed`, což řekne, který balíček ještě chybí.
+**Bluetooth: párování vs. deska jako Bluetooth reproduktor** - tlačítko "Zviditelnit pro párování" v modulu BT Hudba zviditelní desku (`bluetoothctl discoverable/pairable on`), aby ji telefon vůbec našel a mohl se k ní připojit a streamovat na ni hudbu (deska pak funguje jako Bluetooth reproduktor / A2DP sink). Žádné samostatné "spravovat spárovaná zařízení" tlačítko v Nastavení už není (nahrazené tlačítkem Výstup zvuku) - pro zapomenutí/odstranění starého spárování použij přímo `bluetoothctl remove <MAC adresa>` v terminálu.
 
-Na Ubuntu s Qt6 (ověřeno na Orange Pi 5 Pro/Armbian - hláška `QQmlApplicationEngine failed to load component ... module "QtCore" is not installed`) pomůže:
-```
-sudo apt install qml6-module-qtcore qml6-module-qtquick-dialogs
-```
+Aby přehrávání z telefonu fungovalo, jsou potřeba tři různé věci najednou - pokud nejde, projdi je popořadě:
+1. **Zviditelnění** - tlačítko v modulu BT Hudba, jen říká telefonu "tady jsem".
+2. **Potvrzení párování** - bez běžícího "agenta" nemá BlueZ, kdo by příchozí párování potvrdil, takže by se telefon nespároval, i když desku najde. V obou automatických režimech (`kiosk/install-gnome-autostart.sh` i `kiosk/install-kiosk.sh`) se o tohle stará `bt-agent` (balíček `bluez-tools`), který běží na pozadí a páry potvrzuje automaticky. Pokud appku spouštíš mimo tyhle skripty, spusť si `bt-agent -c NoInputNoOutput &` ručně (nebo párování jednou potvrď přes `gnome-control-center`/`bluetoothctl`).
+3. **Přehrávání zvuku** - i po úspěšném spárování potřebuje systém balíček pro Bluetooth audio (`pulseaudio-module-bluetooth` nebo `libspa-0.2-bluetooth`, viz výše) - bez něj se telefon spáruje, ale zvuk nikam nepůjde. Ověření, že modul opravdu běží: `pactl list modules short | grep bluetooth` (PulseAudio) nebo `wpctl status` (PipeWire - Bluetooth zařízení by se mělo objevit v sekci Audio/Sinks po připojení telefonu). Které zařízení je aktuálně výstupní se dá zkontrolovat/přepnout přímo v appce - Nastavení → Výstup zvuku.
 
-Pokud je welle.io sestavené proti staršímu Qt5 (starší systémy), hlášky budou vypadat podobně, ale bez `6` v názvu balíčku:
-```
-sudo apt install qml-module-qtquick2 qml-module-qtquick-controls \
-    qml-module-qtquick-controls2 qml-module-qtquick-dialogs \
-    qml-module-qtquick-layouts qml-module-qtgraphicaleffects qml-module-qtcharts
-```
-Podle přesné hlášky z terminálu (jestli zmiňuje `qml6-module-*` styl chyby, nebo ne) poznáš, která varianta sedí na tvůj systém. Hláška o `libvdpau_nvidia.so` ve stejném výpisu je neškodná - je to jen marná zkouška Nvidia video-dekodéru, který na Mali GPU stejně nikdy nebude použitý.
+Pokud i po tomhle telefon nenabídne desku jako reproduktor v přehrávání hudby, zkontroluj na telefonu, že se skutečně připojil profil "Média/Audio" (A2DP), ne jen "Telefonní hovory" (HFP) - některé telefony je nabízí zvlášť.
 
-**Poznámka k RTL-SDR V4:** V4 používá jiný tuner (R828D) než starší V3 a u některých systémů/starších verzí balíčku `rtl-sdr` býval problém (žádný signál, špatná frekvence, zkreslený zvuk) - vyžadovalo to aktualizovaný ovladač (fork RTL-SDR Blog). Na aktuálních systémech uvedených v tomhle READMU ale balíčkový `rtl-sdr` s V4 dongle otestovaně funguje bez problémů, takže postup níže potřebuješ jen v případě, že bys s obyčejným `rtl-sdr` narazil na některý z těch příznaků:
+**Jen pro kiosk režim bez GNOME** (viz sekce "Automatický start" níže):
+ - `xserver-xorg`, `xinit`, `x11-xserver-utils` - holý X server, appka nepotřebuje celý desktop
+ - `matchbox-window-manager` - odlehčený okenní manažer (žádný panel, žádná plocha)
+ - `unclutter` - schová kurzor myši, když se nehýbe (appka je určená pro dotykovou obrazovku)
+ - `onboard` - dotyková klávesnice, samostatně fungující i bez GNOME
+ - `at-spi2-core` - aby `onboard` poznal, kdy je aktivní textové pole (auto-show)
+ - `dbus-x11` (poskytuje `dbus-launch`) - D-Bus session sběrnice bez desktop prostředí
+ - `dconf-cli` - nastavení výchozích hodnot pro `onboard` (auto-show, ukotvení)
+
+Instalátor si tyhle balíčky nainstaluje sám (`kiosk/install-kiosk.sh`), ruční instalace není potřeba - jsou tu uvedené jen pro přehled.
+
+**Poznámka k welle.io/welle-cli (DAB):** appka spouští jen `welle-cli`, ne GUI aplikaci welle.io - žádné QML moduly navíc tedy nejsou potřeba. Kdybys ale chtěl zprovoznit i samotné GUI welle.io (mimo appku, jen pro ladění signálu), na Qt6 systémech (ověřeno na Orange Pi 5 Pro/Armbian) pomůže `sudo apt install qml6-module-qtcore qml6-module-qtquick-dialogs`, na starších Qt5 systémech `qml-module-qtquick2 qml-module-qtquick-controls qml-module-qtquick-controls2 qml-module-qtquick-dialogs qml-module-qtquick-layouts qml-module-qtgraphicaleffects qml-module-qtcharts`. Spusť `welle-io` přímo v terminálu a přečti si chybovou hlášku (`module "XYZ" is not installed`), ať víš, který balíček přesně chybí.
+
+**Poznámka k RTL-SDR V4:** V4 používá jiný tuner (R828D) než starší V3 a u některých systémů/starších verzí balíčku `rtl-sdr` býval problém (žádný signál, špatná frekvence, zkreslený zvuk) - vyžadovalo to aktualizovaný ovladač (fork RTL-SDR Blog). Na aktuálních systémech uvedených v tomhle READMU ale balíčkový `rtl-sdr` s V4 dongle otestovaně funguje bez problémů (jak pro FM Rádio, tak pro DAB), takže postup níže potřebuješ jen v případě, že bys s obyčejným `rtl-sdr` narazil na některý z těch příznaků:
 ```
 sudo apt purge '^librtlsdr'
 sudo rm -rvf /usr/lib/librtlsdr* /usr/include/rtl-sdr* /usr/local/lib/librtlsdr* \
@@ -288,42 +227,83 @@ sudo make install
 sudo cp ../rtl-sdr.rules /etc/udev/rules.d/
 sudo ldconfig
 
-# ať kernel dongle nezabere jako DVB-T TV tuner dřív, než ho chytí rtl_fm
+# ať kernel dongle nezabere jako DVB-T TV tuner dřív, než ho chytí rtl_fm/welle-cli
 echo 'blacklist dvb_usb_rtl28xxu' | sudo tee /etc/modprobe.d/blacklist-rtlsdr.conf
 sudo reboot
 ```
 Tenhle ovladač je zpětně kompatibilní i se staršími dongly (V3 a generickými), takže ho klidně použij i bez V4.
 
-Pro appku samotnou stačí balíčky výše. Chceš-li rovnou i kiosk režim (appka po startu naskočí sama, bez GNOME), přidej ještě:
-```
-sudo apt install xserver-xorg xinit x11-xserver-utils matchbox-window-manager \
-    unclutter onboard at-spi2-core dbus-x11 dconf-cli
-```
-Tenhle druhý příkaz spouštět nemusíš ručně - `kiosk/install-kiosk.sh` (viz sekce "Kiosk režim") ho zavolá za tebe automaticky. Je tu uvedený hlavně pro přehled, co všechno kiosk režim navíc potřebuje.
-
 S těmito knihovnami by appka měla fungovat správně. Pokud na zařízení nějaká volitelná knihovna (`python3-vlc`, `python3-pyqt5.qtwebengine`, `python3-requests`, `python3-dbus`) chybí, appka to sama pozná a místo pádu zobrazí pro danou stránku hlášku „není dostupné" - zbytek appky běží dál.
 
 ## Výkon
-Pár míst v appce dělá pravidelně se opakující práci na pozadí (kontrola BT přehrávače, aktualizace progress baru u hudby, síťový dotaz na počasí) - u těch platí jedno pravidlo: **nic z toho neběží, když se to zrovna nedívá na obrazovku, a nic z toho neblokuje zbytek appky, když to běží**.
+Pár míst v appce dělá pravidelně se opakující práci na pozadí (kontrola BT přehrávače, aktualizace progress baru u hudby, dotazování DAB na seznam stanic, síťový dotaz na počasí) - u těch platí jedno pravidlo: **nic z toho neběží, když se to zrovna nedívá na obrazovku, a nic z toho neblokuje zbytek appky, když to běží**.
 
-- **BT Hudba a Hudba** - dotazování/aktualizace progress baru běží jen dokud je daná stránka opravdu zobrazená (`showEvent`/`hideEvent` zastaví a znovu spustí časovač). Dřív běželo dotazování BT přehrávače na pozadí pořád, i na úplně jiné stránce - každé 1,5 s to udělalo blokující D-Bus dotaz přímo v GUI vlákně, což se projevovalo jako pravidelné krátké zaseknutí celé appky bez ohledu na to, co uživatel zrovna dělal.
-- **FM Rádio** - přebarvování 6 tlačítek oblíbených stanic (aby se zvýraznila ta aktuálně naladěná) se dřív přepočítávalo při každičkém posunu posuvníku frekvence - při plynulém tažení to bylo klidně desítkykrát za sekundu. Teď se to (stejně jako restart rádia) čeká, až se posuvník na 0,5 s zastaví.
-- **Počasí** - síťový dotaz na openweathermap.org teď běží v samostatném vlákně (`QThread`), takže i kdyby internet byl pomalý nebo nedostupný (dotaz čeká až 5 sekund), zbytek appky zůstane plynulý - dřív se GUI na tu dobu úplně zaseklo hned po otevření stránky.
-- Appka při ukončení počká, až se případně ještě běžící síťový dotaz na počasí dokončí, než se okno doopravdy zavře - bez toho hrozil tvrdý pád při zavírání appky uprostřed dotazu.
+- **BT Hudba, Hudba, DAB** - dotazování/aktualizace běží jen dokud je daná stránka opravdu zobrazená (`showEvent`/`hideEvent` zastaví a znovu spustí příslušný časovač). Dřív běželo dotazování BT přehrávače na pozadí pořád, i na úplně jiné stránce - každé 1,5 s to udělalo blokující D-Bus dotaz přímo v GUI vlákně, což se projevovalo jako pravidelné krátké zaseknutí celé appky bez ohledu na to, co uživatel zrovna dělal. **Samotné přehrávání** (FM Rádio, DAB, Hudba) se od tohohle liší záměrně - to běží dál na pozadí i po přepnutí na jinou stránku, přesně jak by se čekalo od rádia v autě.
+- **FM Rádio** - přebarvování 6 tlačítek oblíbených stanic (aby se zvýraznila ta aktuálně naladěná) se dřív přepočítávalo při každičkém posunu posuvníku frekvence - při plynulém tažení to bylo klidně desítkykrát za sekundu. Teď se to (stejně jako restart rádia) čeká, až se posuvník na 0,5 s zastaví. Stejný princip platí pro posuvník hlasitosti v Nastavení.
+- **Počasí** - síťový dotaz na openweathermap.org běží v samostatném vlákně (`QThread`), takže i kdyby internet byl pomalý nebo nedostupný (dotaz čeká až 5 sekund), zbytek appky zůstane plynulý - bez tohohle by se GUI na tu dobu úplně zaseklo hned po otevření stránky. Appka při ukončení navíc počká, až se případně ještě běžící dotaz dokončí, než se okno doopravdy zavře - bez toho hrozil tvrdý pád při zavírání appky uprostřed dotazu.
+- **DAB a FM Rádio sdílí jeden SDR dongle** - to není otázka výkonu appky, ale fyzického hardwaru: najednou může demodulovat jen jeden z nich (viz modul DAB výše).
 
-## Kiosk režim (bez GNOME, automatický start)
-Pro nasazení v autě appka nepotřebuje kolem sebe celý desktop (GNOME/XFCE/KDE) - jen X server a appku samotnou přes celou obrazovku. Ve složce `kiosk/` je připravený jednorázový instalátor, který:
+## Automatický start (bez nutnosti se přihlašovat/spouštět appku ručně)
+Pro nasazení v autě appka nemá běžet jen tehdy, když ji někdo ručně spustí - má naskočit sama, na celou obrazovku, hned po zapnutí desky. Ve složce `kiosk/` jsou dva různé způsoby, jak toho dosáhnout - liší se v tom, jestli pod appkou běží normální GNOME desktop, nebo ne.
+
+**Doporučený způsob: appka nad běžícím GNOME (`install-gnome-autostart.sh`).** Appka se spustí automaticky hned po přihlášení do normální GNOME session a běží přes celou obrazovku nad ní. V reálném provozu (ověřeno na Orange Pi 5 Pro) se ukázalo být spolehlivější než alternativa níže - fullscreen okna, dotyková klávesnice i párování Bluetooth fungují správně, protože běží skutečný `gnome-shell` s plnou podporou window manageru, a GeoClue2 (poloha pro GNOME Maps) funguje bez dalšího dolaďování, protože `gnome-shell` běží jako jeho agent automaticky. Volitelný skript `trim-gnome.sh` (viz níže) pak zvládne většinu té "ceny navíc" (spotřeba paměti/CPU běžícího GNOME) srazit dolů bez ztráty těchhle výhod.
+
+**Alternativa: appka bez GNOME vůbec (`install-kiosk.sh`).** Bez GDM/gnome-shellu, jen holý X server + odlehčený okenní manažer *matchbox* + appka. V teorii úspornější, ale v reálném testování se ukázaly problémy - dotyková klávesnice (`onboard`) se špatně vykresluje a nezabírá celou obrazovku, a některá okna se chovají nespolehlivě, protože `matchbox` nemá plnou podporu pro fullscreen/dialogová okna jako skutečný desktop. Necháváme ho zdokumentovaný pro slabší desky, ale defaultně doporučujeme variantu s GNOME výše.
+
+### Automatický start nad GNOME (doporučeno)
+
+Postup:
+```
+cd /home/orangepi/Autoradio/kiosk
+chmod +x install-gnome-autostart.sh
+./install-gnome-autostart.sh
+```
+(Bez `sudo` - spouští se jako běžný uživatel, protože jde o nastavení jeho vlastního účtu; jednotlivé kroky uvnitř, co potřebují oprávnění správce, si o heslo řeknou samy.)
+
+Skript:
+1. Nainstaluje podporu pro Bluetooth audio (`bluez`, `bluez-tools`, `pulseaudio-module-bluetooth`/`libspa-0.2-bluetooth`) a `wmctrl`.
+2. Nastaví appku (a záložního `bt-agent` pro automatické potvrzování párování) jako GNOME autostart aplikace (`~/.config/autostart/`).
+3. Vypne uspávání/zamykání obrazovky.
+4. Přepne GNOME session z Wayland na X11 (`WaylandEnable=false` v GDM konfiguraci) - appka i `wmctrl` jsou nástroje pro X11; pod Waylandem běží appka jen přes XWayland kompatibilitu, kde bylo chování dotykové klávesnice i `wmctrl` nespolehlivé.
+5. Zapne vestavěnou dotykovou klávesnici GNOME (viz sekce Dotyková klávesnice níže).
+
+Poslední krok je ruční, jde jen přes GUI: **Nastavení → Uživatelé → zapnout "Automatické přihlášení"** pro tvůj účet. Pak `sudo reboot` - appka by po restartu měla naskočit sama, na celou obrazovku, přímo po přihlášení (teď už na X11, ne na Wayland).
+
+**Zrušení autostartu appky** (appka zmizí, GNOME desktop zůstává normální):
+```
+rm ~/.config/autostart/autoradio.desktop
+rm ~/.config/autostart/bt-agent-autostart.desktop
+```
+
+**Návrat na Wayland** (kdykoliv v budoucnu):
+```
+sudo sed -i 's/^WaylandEnable=false/WaylandEnable=true/' /etc/gdm3/custom.conf
+sudo reboot
+```
+
+### Omezení zátěže GNOME
+Appka běží nad plným GNOME kvůli spolehlivosti (viz výše), ale běžná desktopová instalace má zapnutou spoustu služeb na pozadí, které appka nikdy nevyužije - indexování souborů, kontrola aktualizací, kalendář/kontakty, sdílení plochy, hlášení pádů... Skript `kiosk/trim-gnome.sh` tohle všechno vypne, **aniž by sahal na `gnome-shell`/`mutter` samotné** - to je přesně to, co appce zajišťuje spolehlivý fullscreen, dotykovou klávesnici a Bluetooth, takže to zůstává beze změny.
+
+```
+cd ~/Autoradio/kiosk
+chmod +x trim-gnome.sh
+./trim-gnome.sh
+```
+
+Konkrétně vypne/maskuje: indexování souborů (Tracker), kontrolu a stahování aktualizací na pozadí (GNOME Software, PackageKit, časovač automatického obnovování snapů), hlášení pádů (`whoopsie`, `apport`), synchronizaci kalendáře/kontaktů (Evolution Data Server), sdílení plochy/souborů a zálohování na pozadí, a animace uživatelského rozhraní (appka běží fullscreen, takže je stejně vidí málokdy). Každý krok jde nezávisle vrátit zpět - viz komentáře přímo ve skriptu (`systemctl unmask`, případně gsettings zpátky na `true`). Skript je bezpečné spustit i opakovaně, nic nerozbije už rozběhnutou appku ani není potřeba po něm restart.
+
+### Automatický start bez GNOME (alternativa, viz caveaty výše)
+Ve složce `kiosk/` je jednorázový instalátor, který:
 
 1. Vypne grafické přihlašovací okno (GDM a tedy i celý GNOME desktop), aby se po startu desky nespouštělo.
 2. Nastaví automatické přihlášení na tty1 (žádné zadávání hesla).
 3. Nainstaluje odlehčený okenní manažer *matchbox* (žádný panel, žádná plocha - jen správa oken, aby fungovala i okna Nastavení Wi-Fi/Bluetooth).
 4. Nainstaluje a nastaví dotykovou klávesnici *onboard* (viz níže).
-5. Nainstaluje podporu pro Bluetooth audio (`bluez` + `pulseaudio-module-bluetooth`/`libspa-0.2-bluetooth`), aby telefon mohl na desku streamovat hudbu a modul BT Hudba mohl desku zviditelnit pro párování.
+5. Nainstaluje podporu pro Bluetooth audio, aby telefon mohl na desku streamovat hudbu a modul BT Hudba mohl desku zviditelnit pro párování.
 6. Appku spustí automaticky přes `startx` hned po přihlášení, na celou obrazovku.
 
-Balíčky, které kiosk režim navíc potřebuje, jsou v sekci "Potřebné knihovny" výše ("Jen pro kiosk režim"). Instalátor si je nainstaluje sám, ruční instalace není potřeba.
+Balíčky, které tenhle režim navíc potřebuje, jsou v sekci "Potřebné knihovny" výše. Instalátor si je nainstaluje sám, ruční instalace není potřeba.
 
-Použití (na desce, kde appka leží např. v `/home/orangepi/Autoradio`):
 ```
 cd /home/orangepi/Autoradio/kiosk
 chmod +x install-kiosk.sh
@@ -333,7 +313,7 @@ sudo reboot
 
 Po restartu appka naskočí sama, bez přihlašovací obrazovky a bez GNOME. `gnome-control-center`, `nm-connection-editor` i `blueman-manager` v Nastavení fungují dál normálně - matchbox jen spravuje jejich okna, GNOME shell k tomu není potřeba.
 
-**Návrat ke GNOME** (kdykoliv v budoucnu, např. pro ladění):
+**Návrat ke GNOME** (kdykoliv v budoucnu, např. pro přechod na variantu výše):
 ```
 sudo systemctl enable --now display-manager.service
 sudo rm /etc/systemd/system/getty@tty1.service.d/override.conf
@@ -342,26 +322,44 @@ sudo reboot
 ```
 
 ### Dotyková klávesnice
-Instalátor nastaví *onboard* (funguje i bez GNOME, na rozdíl od vestavěné GNOME klávesnice, která potřebuje gnome-shell). Je nastavená tak, aby:
-- se sama zobrazila při kliknutí do jakéhokoliv textového pole - appky samotné, GTK dialogů (např. zadání Wi-Fi hesla), i vestavěného YouTube/YouTube Music/Map,
-- byla ukotvená dole na obrazovce (ne volně plovoucí okno).
+**Pokud jsi zvolil automatický start nad GNOME** (doporučeno), appka používá výhradně vestavěnou klávesnici GNOME (Screen Keyboard) - žádný `onboard` navíc. `install-gnome-autostart.sh` ji zapne automaticky (`org.gnome.desktop.a11y.applications screen-keyboard-enabled`), včetně přepnutí session na X11 (viz výše), pod kterým appka spolehlivě signalizuje aktivní textové pole přes accessibility rozhraní (`QT_ACCESSIBILITY=1` a Chromium `--force-renderer-accessibility`, oboje už appka nastavuje sama v `run_autoradio.sh`). Dá se doladit v Nastavení → Přístupnost → Klávesnice na obrazovce.
 
-Appka má navíc v dolní liště vlastní ikonku klávesnice pro ruční zapnutí/vypnutí - pro případ, že by se automatické zobrazení v nějakém konkrétním poli nespustilo (typicky u některých webových stránek, kde web sám nedá včas najevo, že se jedná o textové pole).
+Důležité omezení, o kterém stojí za to vědět: GNOME nedává zvenčí žádný spolehlivý způsob, jak tuhle klávesnici ručně vyvolat na povel - potvrzeno přímo vývojářem gnome-shellu (žádné D-Bus rozhraní pro to neexistuje, jen automatické zobrazení na focus). Appka proto v tomhle režimu nemá žádné tlačítko na ruční zapnutí/vypnutí klávesnice - pokud by se auto-show v nějakém konkrétním poli nespustilo, jinou možnost než zkusit kliknout znovu / do jiného pole bohužel není.
 
-Pokud by se auto-show nechoval podle očekávání, dá se doladit i graficky: `onboard-settings` (potřebuje balíček `onboard` s podporou GUI nastavení).
+**Pokud jsi zvolil variantu bez GNOME**, GNOME klávesnice bez gnome-shellu vůbec nefunguje, takže instalátor tam pořád používá `onboard` - ten funguje nezávisle na desktop prostředí a má navíc vlastní D-Bus rozhraní pro ruční zapnutí/vypnutí, které appka využívá přes ikonku klávesnice v dolní liště. V reálném provozu se ale ukázalo, že se `onboard` pod `matchbox` může vykreslovat nespolehlivě a ořezaně - v tom případě je jednodušší přejít na variantu s GNOME výše. Ikonka klávesnice v dolní liště je proto v appce natrvalo - v GNOME režimu jen nemá co ovládat (`onboard` tam neběží), takže klepnutí na ni v tichosti nic neudělá.
 
 ### Fyzické tlačítko napájení
-Pokud má deska/displej připojené fyzické tlačítko napájení (ACPI power key), stojí za to nastavit, aby jen rovnou vypnulo zařízení, místo aby čekalo na potvrzení v nějakém dialogu (v kiosk režimu bez GNOME shellu by na takový dialog stejně nebylo kde kliknout):
+Pokud má deska/displej připojené fyzické tlačítko napájení (ACPI power key), stojí za to nastavit, aby jen rovnou vypnulo zařízení, místo aby čekalo na potvrzení v nějakém dialogu:
 
 ```
 sudo sed -i 's/^#\?HandlePowerKey=.*/HandlePowerKey=poweroff/' /etc/systemd/logind.conf
 sudo systemctl restart systemd-logind
 ```
-Ověření, že se nastavení opravdu propsalo: `grep HandlePowerKey /etc/systemd/logind.conf` by měl ukázat `HandlePowerKey=poweroff` bez `#` na začátku. (Pokud by v souboru řádek `HandlePowerKey` úplně chyběl - neobvyklé, výchozí soubor ho obvykle má aspoň zakomentovaný - klidně ho na konec souboru přidej ručně: `echo "HandlePowerKey=poweroff" | sudo tee -a /etc/systemd/logind.conf`.)
+Ověření: `grep HandlePowerKey /etc/systemd/logind.conf` by měl ukázat `HandlePowerKey=poweroff` bez `#` na začátku. (Pokud by řádek úplně chyběl - neobvyklé - přidej ho ručně: `echo "HandlePowerKey=poweroff" | sudo tee -a /etc/systemd/logind.conf`.)
 
-Pokud appku spouštíš i mimo kiosk režim, s běžícím GNOME desktopem, potlač ještě jeho vlastní potvrzovací dialog při odhlášení/vypnutí:
+Appka běžící nad GNOME (doporučená varianta) navíc potřebuje potlačit vlastní potvrzovací dialog GNOME při odhlášení/vypnutí:
 ```
 gsettings set org.gnome.SessionManager logout-prompt false
 ```
 
-*Jedná se o verzi 15.*
+## Historie verzí
+Stručný přehled - podrobnosti k jednotlivým bodům jsou popsané výš u příslušných modulů/sekcí.
+
+- **v20** - GNOME autostart už nepoužívá `onboard` vůbec, jen vestavěnou GNOME klávesnici (Screen Keyboard) - ověřeno, že GNOME nemá žádné rozhraní pro ruční vyvolání klávesnice zvenčí, takže appka v tomhle režimu nemá ani tlačítko pro ruční zapnutí/vypnutí. `onboard` zůstává jen u alternativní bare-X varianty (`install-kiosk.sh`), kde GNOME klávesnice bez gnome-shellu nefunguje.
+- **v19** - Vlastní modul DAB (nahrazuje spouštěč welle.io GUI, viz modul DAB výše), skript `trim-gnome.sh` na omezení zátěže GNOME, README přeorganizované (historie verzí přesunutá sem na konec, popisy modulů rozšířené).
+- **v18** - Fullscreen napříč appkami (welle.io/GNOME Maps přes `wmctrl`), Web vestavěný místo externího Chromia, spolehlivější dotyková klávesnice (přepnutí na X11 + `onboard` vedle GNOME klávesnice), Nastavení: Bluetooth tlačítko nahrazené Výstupem zvuku, fronta v hudebním přehrávači.
+- **v17** - Doporučený automatický start nad běžícím GNOME (`install-gnome-autostart.sh`) místo bare-X kiosku - spolehlivější fullscreen, klávesnice i GeoClue2.
+- **v16** - GeoClue2 v kiosk režimu bez agenta - explicitní povolení aplikací v `/etc/geoclue/conf.d/`.
+- **v15** - Oprava pravidelného zasekávání appky (BT Hudba dotazovalo na pozadí i mimo obrazovku), sloučení Bluetooth ikonek do jedné.
+- **v14** - Odebrané vestavěné Mapy (duplicita s Navigací), nový modul BT Hudba.
+- **v13** - Podrobný postup pro GPS VK-162 (`gps-share` + GeoClue2 + GNOME Maps).
+- **v12** - Potvrzené opravy z reálného nasazení: welle.io Qt6 QML fix, fyzické tlačítko napájení.
+- **v11**, **v10** - Opravy po testu na reálném zařízení (chybějící soubor v hudebním přehrávači, layout Počasí, Bluetooth zviditelnění).
+- **v9** - Odebrání Spotify (nefunkční), oprava hudebního přehrávače, Bluetooth ikonka v docku.
+- **v8** - Dotyková klávesnice (`onboard`) v kiosk režimu.
+- **v7** - Přidaný kiosk režim (automatický start bez GNOME, přes `matchbox`).
+- **v6** - Kontrola kódu a README, vyšperkovaný retro vzhled (gradienty, LCD panely).
+- **v5** - Odebrání Spotify (první pokus), odolnost appky vůči chybějícím volitelným knihovnám.
+- **v4** - Ukládání oblíbených stanic ve FM Rádiu, Bluetooth ikonka.
+- **v3** - YouTube a YouTube Music vestavěné (`QWebEngineView`) místo spouštění Chromia.
+- **v2** - Přechod z více oken na jedno stálé okno (`QStackedWidget`), dock s domečkem, retro vzhled.

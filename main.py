@@ -32,9 +32,9 @@ APPS = [
     {"id": "ytmusic",  "label": "YT Music",  "icon": "youtube_music.png", "kind": "embed"},
     {"id": "fm",       "label": "FM Rádio",  "icon": "fm.png",            "kind": "embed"},
     {"id": "video",    "label": "Video",     "icon": "vlc.png",           "kind": "embed"},
-    {"id": "dab",      "label": "DAB",       "icon": "dab.png",           "kind": "external"},
+    {"id": "dab",      "label": "DAB",       "icon": "dab.png",           "kind": "embed"},
     {"id": "weather",  "label": "Počasí",    "icon": "weather.png",       "kind": "embed"},
-    {"id": "web",      "label": "Web",       "icon": "browser.png",       "kind": "external"},
+    {"id": "web",      "label": "Web",       "icon": "browser.png",       "kind": "embed"},
     {"id": "settings", "label": "Nastavení", "icon": "settings.png",      "kind": "embed"},
     {"id": "themes",   "label": "Vzhled",    "icon": "themes.png",        "kind": "embed"},
     {"id": "btmusic",  "label": "BT Hudba",  "icon": "btmusic.png",       "kind": "embed"},
@@ -66,15 +66,13 @@ ThemeSelector = _safe_import("themes", "ThemeSelector")
 BluetoothPlayer = _safe_import("bluetooth_player", "BluetoothPlayer")
 YouTubeApp = _safe_import("youtube", "YouTubeApp")
 YouTubeMusicApp = _safe_import("youtube_music", "YouTubeMusicApp")
+WebApp = _safe_import("web", "WebApp")
+DabRadio = _safe_import("dab_radio", "DabRadio")
 
-import web
-import DAB
 import navigace
 from app_launcher import toggle_onscreen_keyboard
 
 EXTERNAL_LAUNCHERS = {
-    "web": web.launch,
-    "dab": DAB.launch,
     "nav": navigace.launch,
 }
 
@@ -88,12 +86,14 @@ EAGER_FACTORIES = {
     "settings": (Settings, "Nastavení"),
     "themes":   (ThemeSelector, "Vzhled"),
     "btmusic":  (BluetoothPlayer, "BT Hudba"),
+    "dab":      (DabRadio, "DAB"),
 }
 
 LAZY_FACTORIES = {
     "weather": (WeatherApp, "Počasí"),
     "youtube": (YouTubeApp, "YouTube"),
     "ytmusic": (YouTubeMusicApp, "YT Music"),
+    "web":     (WebApp, "Web"),
 }
 
 
@@ -492,7 +492,7 @@ class MainWindow(QWidget):
         if fm is not None and hasattr(fm, "stop_radio"):
             fm.stop_radio()
 
-        for app_id in ("music", "youtube", "ytmusic"):
+        for app_id in ("music", "youtube", "ytmusic", "web", "dab"):
             widget = self.page_widget.get(app_id)
             if widget is not None and hasattr(widget, "stop_playback"):
                 widget.stop_playback()
