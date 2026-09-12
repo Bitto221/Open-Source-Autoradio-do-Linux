@@ -4,7 +4,7 @@ import traceback
 
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QToolButton, QGridLayout,
-    QLabel, QVBoxLayout, QHBoxLayout, QStackedWidget, QFrame
+    QLabel, QVBoxLayout, QHBoxLayout, QStackedWidget
 )
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import QSize, Qt, QTimer, QDateTime
@@ -22,8 +22,10 @@ sys.path.insert(0, BASE_DIR)
 #
 # kind = "embed"    -> a QWidget page built in-process and swapped into the
 #                       central QStackedWidget (no new python window!)
-# kind = "external" -> a real external program / browser that needs its own
-#                       OS window (welle-io, gnome-maps, chromium, ...)
+# kind = "external" -> a real external program that needs its own OS window
+#                       (only GNOME Maps for Navigace - everything else that
+#                       used to be external, like welle.io or a browser, is
+#                       now its own embedded page instead)
 # ---------------------------------------------------------------------------
 
 APPS = [
@@ -32,7 +34,7 @@ APPS = [
     {"id": "ytmusic",  "label": "YT Music",  "icon": "youtube_music.png", "kind": "embed"},
     {"id": "fm",       "label": "FM Rádio",  "icon": "fm.png",            "kind": "embed"},
     {"id": "video",    "label": "Video",     "icon": "vlc.png",           "kind": "embed"},
-    {"id": "dab",      "label": "DAB",       "icon": "dab.png",           "kind": "embed"},
+    {"id": "dab",      "label": "DAB",       "icon": "dab.png",           "kind": "external"},
     {"id": "weather",  "label": "Počasí",    "icon": "weather.png",       "kind": "embed"},
     {"id": "web",      "label": "Web",       "icon": "browser.png",       "kind": "embed"},
     {"id": "settings", "label": "Nastavení", "icon": "settings.png",      "kind": "embed"},
@@ -67,12 +69,12 @@ BluetoothPlayer = _safe_import("bluetooth_player", "BluetoothPlayer")
 YouTubeApp = _safe_import("youtube", "YouTubeApp")
 YouTubeMusicApp = _safe_import("youtube_music", "YouTubeMusicApp")
 WebApp = _safe_import("web", "WebApp")
-DabRadio = _safe_import("dab_radio", "DabRadio")
 
+import DAB
 import navigace
-from app_launcher import toggle_onscreen_keyboard
 
 EXTERNAL_LAUNCHERS = {
+    "dab": DAB.launch,
     "nav": navigace.launch,
 }
 
@@ -86,7 +88,6 @@ EAGER_FACTORIES = {
     "settings": (Settings, "Nastavení"),
     "themes":   (ThemeSelector, "Vzhled"),
     "btmusic":  (BluetoothPlayer, "BT Hudba"),
-    "dab":      (DabRadio, "DAB"),
 }
 
 LAZY_FACTORIES = {
@@ -320,21 +321,8 @@ class MainWindow(QWidget):
         for app_id in right_ids:
             layout.addWidget(self._make_dock_button(by_id[app_id]))
 
-        layout.addSpacing(10)
-        layout.addWidget(self._make_dock_divider())
-        layout.addSpacing(10)
-        layout.addWidget(self._make_keyboard_button())
-
         layout.addStretch()
         return bar
-
-    def _make_dock_divider(self):
-        # Thin vertical separator so the keyboard quick-action reads as
-        # "not a page" and is visually set apart from the app icons.
-        line = QFrame()
-        line.setObjectName("dockDivider")
-        line.setFixedSize(1, 30)
-        return line
 
     def _make_dock_button(self, app):
         btn = QToolButton()
@@ -358,21 +346,6 @@ class MainWindow(QWidget):
         btn.setCheckable(True)
         btn.clicked.connect(lambda: self.go_to("home"))
         self.dock_buttons["home"] = btn
-        return btn
-
-    def _make_keyboard_button(self):
-        # Manual show/hide for the on-screen (touch) keyboard. The
-        # keyboard (onboard) is set up to pop up on its own when a text
-        # field gets focus - this button is the fallback/override for
-        # the cases where auto-show doesn't trigger.
-        btn = QToolButton()
-        btn.setObjectName("dockIcon")
-        btn.setIcon(QIcon(os.path.join(ICON_PATH, "keyboard.png")))
-        btn.setIconSize(QSize(24, 24))
-        btn.setFixedSize(40, 40)
-        btn.setToolTip("Dotyková klávesnice")
-        btn.setCheckable(False)
-        btn.clicked.connect(lambda: toggle_onscreen_keyboard())
         return btn
 
     # ------------------------------------------------------------------
@@ -492,7 +465,7 @@ class MainWindow(QWidget):
         if fm is not None and hasattr(fm, "stop_radio"):
             fm.stop_radio()
 
-        for app_id in ("music", "youtube", "ytmusic", "web", "dab"):
+        for app_id in ("music", "youtube", "ytmusic", "web"):
             widget = self.page_widget.get(app_id)
             if widget is not None and hasattr(widget, "stop_playback"):
                 widget.stop_playback()

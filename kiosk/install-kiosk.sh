@@ -141,8 +141,10 @@ echo
 echo "Otevři BT Hudbu a tlačítkem \"Zviditelnit pro párování\" desku"
 echo "zpřístupníš telefonu, aby se z něj dala streamovat hudba (deska"
 echo "= Bluetooth reproduktor). Na pozadí navíc běží bt-agent, který"
-echo "příchozí párování z telefonu automaticky potvrdí. Pro správu"
-echo "už spárovaných zařízení pořád slouží tlačítko v Nastavení."
+echo "příchozí párování z telefonu automaticky potvrdí. Pro odstranění"
+echo "starého spárování použij 'bluetoothctl remove <MAC adresa>' v"
+echo "terminálu - appka teď v Nastavení nabízí jen Výstup zvuku, ne"
+echo "samostatnou správu spárovaných zařízení."
 echo
 echo "Pro ruční test hned teď (bez restartu):"
 echo "  sudo systemctl restart getty@tty1"

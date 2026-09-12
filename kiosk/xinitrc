@@ -26,18 +26,19 @@ matchbox-window-manager -use_titlebar no &
 
 # Dotyková klávesnice, co se sama zobrazí, když se klikne do
 # textového pole - kdekoliv (appka samotná, GTK dialogy typu Wi-Fi
-# heslo, i vestavěné YouTube/Mapy). Auto-show a ukotvení dole
+# heslo, i vestavěné YouTube/Web). Auto-show a ukotvení dole
 # nastavuje install-kiosk.sh při instalaci (dconf výchozí hodnoty).
 # Appka navíc má vlastní ikonku pro ruční zapnutí/vypnutí, kdyby se
 # automatické zobrazení někde nespustilo.
 onboard &
 
 # Bez zaregistrovaného "agenta" nemá BlueZ, kdo by potvrdil párování
-# přicházející z telefonu, i když je deska zviditelněná (ikonka
-# Bluetooth v docku) - párování by se pak jen tiše nepovedlo. bt-agent
-# běží na pozadí a automaticky páry potvrzuje bez nutnosti cokoliv
-# potvrzovat na obrazovce (žádný displej/klávesnice u samotného
-# Bluetooth adaptéru ostatně ani nejsou potřeba).
+# přicházející z telefonu, i když je deska zviditelněná (tlačítko
+# "Zviditelnit pro párování" v modulu BT Hudba) - párování by se pak
+# jen tiše nepovedlo. bt-agent běží na pozadí a automaticky páry
+# potvrzuje bez nutnosti cokoliv potvrzovat na obrazovce (žádný
+# displej/klávesnice u samotného Bluetooth adaptéru ostatně ani
+# nejsou potřeba).
 bt-agent -c NoInputNoOutput &
 
 exec __APP_DIR__/kiosk/run_autoradio.sh

@@ -143,9 +143,9 @@ def set_bluetooth_discoverable(enabled):
     """Makes this device itself discoverable and pairable over Bluetooth,
     so a phone can find *it* and connect to stream audio to it (the
     Orange Pi acting as an A2DP sink / Bluetooth speaker) - a different
-    goal from open_bluetooth_manager(), which is for pairing/managing
-    devices the other way around. Toggled by the Bluetooth icon in the
-    dock.
+    goal from open_gnome_settings_panel("bluetooth"), which is for
+    pairing/managing devices the other way around. Toggled by the
+    "Zviditelnit pro párování" button in BT Hudba.
 
     This only handles visibility/pairability - actually receiving and
     playing the audio once connected depends on the system's Bluetooth
@@ -172,35 +172,3 @@ def set_bluetooth_discoverable(enabled):
     except Exception as e:
         print(f"[CHYBA] Nepodařilo se nastavit viditelnost Bluetooth: {e}")
         return False
-
-
-def toggle_onscreen_keyboard():
-    """Shows/hides the on-screen (touch) keyboard - `onboard`, started
-    alongside the kiosk session (see kiosk/xinitrc), is set up to
-    auto-show itself when a text field gets focus. This is the manual
-    fallback/override for cases where auto-show doesn't trigger (some
-    web page fields, some dialogs) - one tap toggles it directly via
-    onboard's D-Bus interface.
-
-    Never raises - if onboard isn't running/installed, this just prints
-    a message instead of crashing the app."""
-
-    if shutil.which("dbus-send"):
-        try:
-            result = subprocess.run(
-                ["dbus-send", "--session", "--type=method_call",
-                 "--dest=org.onboard.Onboard",
-                 "/org/onboard/Onboard/Keyboard",
-                 "org.onboard.Onboard.Keyboard.ToggleVisible"],
-                capture_output=True, timeout=3
-            )
-            if result.returncode == 0:
-                return True
-        except Exception:
-            pass
-
-    print(
-        "Dotyková klávesnice (onboard) neběží nebo není nainstalovaná "
-        "(sudo apt install onboard)."
-    )
-    return False

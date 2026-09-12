@@ -250,6 +250,15 @@ def stylesheet(color=None):
         padding: 6px;
     }}
 
+    QComboBox QAbstractItemView {{
+        background-color: #14141f;
+        color: #f2f2f7;
+        border: 1px solid {dim};
+        selection-background-color: {color};
+        selection-color: #0a0a12;
+        outline: none;
+    }}
+
     QLabel#title {{
         font-size: 34px;
         font-weight: bold;
@@ -534,13 +543,6 @@ def dock_stylesheet(color=None):
 
     QToolButton#homeBtn:pressed {{
         background-color: {darken(color, 0.25)};
-    }}
-
-    QFrame#dockDivider {{
-        background-color: {rgba(color, 110)};
-        border: none;
-        max-width: 1px;
-        min-width: 1px;
     }}
     """
 

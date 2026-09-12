@@ -1,6 +1,6 @@
 Open Source Autoradio do Linux
 ==============================
-Autorádio pro Linux (Orange Pi 5 Pro a podobné desky), postavené na PyQt5. Běží jako jedno stálé okno (`main.py`) - jednotlivé aplikace jsou "vestavěné stránky" v `QStackedWidget`, mezi kterými appka přepíná okamžitě, bez zakládání nového procesu. Jen skutečně externí program (GNOME Maps pro Navigaci) se spouští jako samostatný proces, protože jinak to nejde - ale i ten appka přepne do stejného fullscreen vzhledu jako zbytek appky.
+Autorádio pro Linux (Orange Pi 5 Pro a podobné desky), postavené na PyQt5. Běží jako jedno stálé okno (`main.py`) - jednotlivé aplikace jsou "vestavěné stránky" v `QStackedWidget`, mezi kterými appka přepíná okamžitě, bez zakládání nového procesu. Jen skutečně externí programy (welle-io pro DAB, Navit pro Navigaci) se spouští jako samostatný proces, protože jinak to nejde - ale i ty appka přepne do stejného fullscreen vzhledu jako zbytek appky.
 
 ![desktop](printscreen/desktop.jpg)
 
@@ -31,13 +31,11 @@ Jednoduché okno jako spouštěč VLC přehrávače - appka jen zprostředkuje v
 
 DAB
 ----------------------------------
-Vlastní DAB/DAB+ modul, napsaný stejným stylem jako ostatní appky - ne jen spouštěč cizího programu. Skutečné DAB/DAB+ demodulování (OFDM, Reed-Solomonovo FEC, MPEG dekódování) je ale seriózní DSP práce, kterou by nedávalo smysl znovu psát od nuly v Pythonu - místo toho appka na pozadí spouští **`welle-cli`** (bezhlavá varianta stejného enginu, který pohání welle.io), a s ním mluví přesně tak, jak appka mluví i s ostatními službami: přes malý webserver, který `welle-cli` sám nabízí.
+Spouštěč nativní aplikace **welle-io** (`welle-io`), stejně jako u ostatních skutečně externích programů (Navigace/Navit) - appka jen otevře/zaostří jeho okno a přes `wmctrl` ho přepne na celou obrazovku, ať kolem něj není vidět GNOME horní lišta.
 
-Jak to funguje: appka spustí `welle-cli -c <kanál> -w 7979` na pozadí, pak se stejně jako modul Počasí (přes `requests`) ptá na `http://127.0.0.1:7979/mux.json`, dokud `welle-cli` nenajde na daném kanálu nějaké stanice. Jakmile je najde, appka je ukáže v seznamu - klepnutím na stanici appka pustí `http://127.0.0.1:7979/mp3/<SID>` přes VLC (`python-vlc`), stejně jako by pustila lokální soubor v Hudbě. Kanál se vybírá ze standardního rastru Band III (5A-13F) v rozbalovací nabídce.
+Appka měla dřív vlastní DAB modul napsaný nad bezhlavým `welle-cli` (viz historie verzí), ale v praxi se ukázalo jednodušší a spolehlivější použít rovnou skutečné GUI `welle-io` - má vlastní seznam stanic, slideshow obrázky i lepší zpracování metadat, než co by dávalo smysl znovu stavět v Pythonu.
 
-Dotazování na seznam stanic (`/mux.json`) se stejně jako u BT Hudby zastavuje, když stránka DAB není na obrazovce - ale samotné přehrávání (stejně jako u FM Rádia) běží dál na pozadí i při přepnutí jinam, dokud nezmáčkneš Stop.
-
-**Důležité:** DAB a FM Rádio sdílí stejný SDR dongle - najednou může demodulovat jen jeden z nich. Pokud `welle-cli` po klepnutí na "Vyhledat stanice" hned spadne (appka to pozná a napíše), zkontroluj, že zrovna nehraje FM Rádio.
+**Důležité:** DAB a FM Rádio sdílí stejný SDR dongle - najednou může fungovat jen jeden z nich. Pokud `welle-io` po spuštění nenajde žádné stanice, zkontroluj, že zrovna nehraje FM Rádio.
 
 Počasí
 ----------------------------------
@@ -67,11 +65,13 @@ Funguje to přes **BlueZ AVRCP** rozhraní (`org.bluez.MediaPlayer1` na systémo
 
 Navigace
 ----------------------------------
-Spouštěč nativní aplikace **GNOME Maps** (`gnome-maps`) - appka ho přes `wmctrl` navíc přepne do fullscreen, aby vypadal stejně jako zbytek appky, bez GNOME lišty kolem. Pro určení polohy s USB GPS přijímačem ("GPS mouse") viz podrobný postup níže.
+Spouštěč nativní aplikace **Navit** (`navit`) - appka ho přes `wmctrl` navíc přepne do fullscreen, aby vypadal stejně jako zbytek appky, bez GNOME lišty kolem.
 
-**Určování polohy s GPS přijímačem VK-162 ("GPS mouse", u-blox čip):** GNOME Maps si polohu bere ze systémové služby **GeoClue2**, která o USB GPS zařízení sama o sobě neví. VK-162 je založený na u-blox čipu a hlásí se jako standardní USB sériové zařízení (`/dev/ttyACM0`), takže funguje bez jakýchkoliv driverů - jen ho je potřeba propojit s GeoClue2. Postup:
+Navit je vybraný záměrně místo GNOME Maps - je to navigační software navržený přímo pro "carputer" nasazení (touchscreen rozhraní, offline mapy, hlasové pokyny), a hlavně: **umí číst polohu přímo z `gpsd`**, úplně bez GeoClue2. To je zásadní rozdíl oproti GNOME Maps, které polohu berou výhradně přes GeoClue2 - tenhle systémový mezikrok (a jeho propojení s USB GPS přijímačem přes `gps-share`) se v praxi ukázal jako křehký a náchylný na těžko viditelné chyby (špatná oprávnění na socketu, chybějící "agent" pro potvrzení přístupu). Navit se čtením přímo z `gpsd` celé téhle vrstvě vyhne.
 
-**1. Ověř, že hardware sám o sobě funguje** (nezávisle na GNOME Maps):
+**Kompletní nastavení (přijímač VK-162, u-blox čip):**
+
+**1. Ověř, že hardware sám o sobě funguje:**
 ```
 sudo apt install gpsd gpsd-clients
 sudo gpsd /dev/ttyACM0 -F /var/run/gpsd.sock
@@ -79,71 +79,98 @@ cgps -s
 ```
 (Za `/dev/ttyACM0` dosaď skutečné zařízení - zjistíš ho přes `ls /dev/ttyACM* /dev/ttyUSB*` po připojení, nebo `dmesg | tail` hned po zapojení.) `cgps` by měl ukázat souřadnice, jakmile přijímač "chytí" satelity - venku i pár desítek sekund, u okna to VK-162 zvládne i uvnitř, v hlubším vnitrozemí budovy nemusí chytit vůbec.
 
-**2. Propoj GPS s GeoClue2 přes `gps-share`** - malý nástroj postavený přímo pro tenhle účel (na rozdíl od `gpsd` umí data poslat rovnou do GeoClue2 přes unix socket, který GeoClue2 podporuje nativně):
+**2. Nastav `gpsd` jako trvalou službu** (ne jednorázové spuštění z kroku 1 - to bylo jen pro test):
 ```
-sudo apt install cargo libudev-dev pkg-config build-essential git
-git clone https://github.com/zeenix/gps-share.git
-cd gps-share
-cargo build --release
-sudo cp target/release/gps-share /usr/local/bin/
-```
-
-**3. Spouštěj `gps-share` jako systémovou službu**, ať běží na pozadí od startu:
-```
-sudo tee /etc/systemd/system/gps-share.service > /dev/null << 'EOF'
-[Unit]
-Description=GPS to GeoClue2 bridge (gps-share)
-After=multi-user.target
-
-[Service]
-ExecStart=/usr/local/bin/gps-share -s /var/run/gps-share.sock -b 9600 -a -x /dev/ttyACM0
-Restart=on-failure
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
+sudo tee /etc/default/gpsd > /dev/null << 'EOF'
+START_DAEMON="true"
+DEVICES="/dev/ttyACM0"
+GPSD_OPTIONS="-n"
+USBAUTO="true"
 EOF
-sudo systemctl daemon-reload
-sudo systemctl enable --now gps-share.service
+sudo systemctl enable --now gpsd.socket
+sudo systemctl restart gpsd
+cgps -s
 ```
-(`-s` = poslouchej na unix socketu, `-b 9600` = rychlost VK-162, `-a` = nezveřejňovat přes Avahi na síť, `-x` = neposlouchat na TCP - v autě stačí čistě lokální socket, žádné sdílení po síti.)
+(`-n` = nečekat na první příkaz od klienta, začít číst GPS hned po startu - jinak by `gpsd` mohl vypadat "prázdný", dokud se k němu něco nepřipojí.)
 
-**4. Řekni GeoClue2, ať ten socket používá:**
+**3. Nainstaluj Navit a vytvoř si vlastní konfiguraci:**
 ```
-sudo mkdir -p /etc/geoclue/conf.d
-sudo tee /etc/geoclue/conf.d/99-gps-share.conf > /dev/null << 'EOF'
-[network-nmea]
-enable=true
-nmea-socket=/var/run/gps-share.sock
-EOF
-sudo systemctl restart geoclue
+sudo apt install navit-gui-internal navit-graphics-gtk-drawing-area navit-data
+navit
+```
+Samotný balíček `navit` na Ubuntu/Debianu neobsahuje žádné grafické rozhraní vůbec - je rozdělený na víc balíčků zvlášť. `navit-gui-internal` je vlastní odlehčené rozhraní Navitu (lepší pro dotykovou obrazovku než starší `navit-gui-gtk`), `navit-graphics-gtk-drawing-area` je vykreslovací vrstva, kterou obě rozhraní potřebují. Bez těchhle balíčků `navit` spadne hned po startu s `FATAL: No GUI available.`
+
+Zavři ho (appka ho pak stejně spouští sama). **Navit si výchozí konfiguraci do `~/.navit/` sám nezkopíruje** - jen čte tu, co je nainstalovaná systémově. Zkopíruj si ji ručně, ať máš vlastní kopii k úpravám:
+```
+ls -la /etc/navit/navit.xml /usr/share/navit/navit.xml 2>/dev/null
+mkdir -p ~/.navit
+cp /etc/navit/navit.xml ~/.navit/navit.xml
+# pokud tenhle soubor na tvém systému neexistuje, zkus místo něj:
+# cp /usr/share/navit/navit.xml ~/.navit/navit.xml
 ```
 
-**5. Povol appkám přístup k poloze bez agenta** - GeoClue2 běžně nechá o povolení rozhodovat běžící "agent" (na běžném GNOME desktopu je to gnome-shell, který se zeptá "povolit této appce polohu?"). Pokud appka běží v režimu bez gnome-shellu, žádný agent neexistuje a GeoClue2 by defaultně zamítl úplně všechny požadavky na polohu (`AccessDenied: Geolocation disabled for UID 1000`). Řešení je obejít potřebu agenta explicitním povolením konkrétních aplikací:
+**4. Uprav `~/.navit/navit.xml`** - najdi řádek `<vehicle ...>` a uprav/přidej:
+```xml
+<vehicle name="GPS" profilename="car" enabled="yes" active="1" source="gpsd://localhost" follow="1"/>
 ```
-sudo tee /etc/geoclue/conf.d/99-allow-apps.conf > /dev/null << 'EOF'
-[where-am-i]
-allowed=true
-system=false
-users=
+(`follow="1"` = mapa se posouvá s tebou při každé aktualizaci polohy, ne až na okraji obrazovky.) Ověř zároveň, že `profilename="car"` odkazuje na skutečně existující profil: `grep -n "<vehicleprofile" ~/.navit/navit.xml` by měl ukázat mimo jiné `<vehicleprofile name="car"`.
 
-[org.gnome.Maps]
-allowed=true
-system=false
-users=
-EOF
-sudo systemctl restart geoclue
+**5. Stáhni a přidej mapová data** - Navit v balíčku žádné mapy neobsahuje. Ověřený postup (přes vlastní `maptool` Navitu, ne přes nějaké tlačítko v appce - žádné takové jednoduché "stáhnout mapu" menu v aktuální verzi není):
 ```
-(Pokud appka běží v doporučeném režimu nad GNOME - viz sekce Automatický start - gnome-shell už agenta poskytuje sám a tenhle krok není potřeba.)
+sudo apt install maptool
+cd ~
+wget https://download.geofabrik.de/europe/czech-republic-latest.osm.pbf
+maptool --protobuf -i czech-republic-latest.osm.pbf czech-republic.bin
+```
+(Za "czech-republic" dosaď svůj region - seznam všech zemí/oblastí je na `https://download.geofabrik.de/`. Soubor pro ČR má přes 900 MB, převod `maptool`em chvíli potrvá - u dokončeného převodu uvidíš na konci `PROGRESS: Phase 14: done`. Spoustu varování typu `OSM Warning: ... turn restriction ...` uvidíš u každé mapy tohohle rozsahu - jsou neškodná, týkají se pár jednotlivých křižovatek v datech OSM, ne tvého souboru.)
 
-**6. Ověř, že GeoClue2 polohu skutečně má** (ukáže ji ještě předtím, než vůbec otevřeš GNOME Maps):
+Pak do `~/.navit/navit.xml` najdi element `<mapset>` s komentářem "Mapset template for OpenStreetMap" a vlož/nahraď dovnitř (cesta musí být absolutní, `~` se v XML nerozbaluje):
+```xml
+<mapset enabled="yes">
+    <map type="binfile" enabled="yes" data="/home/orangepi/czech-republic.bin"/>
+</mapset>
 ```
-sudo apt install geoclue-2-demo
-/usr/libexec/geoclue-2.0/demos/where-am-i
-```
-Měly by se objevit reálné souřadnice s `Description: GPS` (ne `GeoIP`). Pokud furt ukazuje jen přibližnou polohu podle IP adresy, zkontroluj `journalctl -u gps-share -u geoclue` - tam uvidíš, jestli `gps-share` vůbec dostává data z GPS.
+Restartuj Navit - bez tohohle kroku appka ukáže jen prázdnou/šedou mapu bez ohledu na to, jak dobře GPS funguje.
 
-Jakmile `where-am-i` ukáže správnou polohu, GNOME Maps ji použije automaticky - není potřeba nic dalšího nastavovat.
+**6. Vypni ukázkovou mapu** - výchozí konfigurace má ještě jeden aktivní mapset s ukázkovými daty (`<xi:include href="$NAVIT_SHAREDIR/maps/*.xml"/>`), který na Ubuntu/Debianu ukazuje na neexistující soubor (balíček žádnou ukázkovou mapu neobsahuje) - v logu se to projeví neškodnou hláškou `Unable to include '...maps/*.xml'`, ale pro pořádek ho vypni, ať je jasné, že appka pracuje jen s tvými reálnými daty:
+```
+grep -n '<mapset enabled="yes">' ~/.navit/navit.xml
+```
+Najdi ten, co obsahuje `$NAVIT_SHAREDIR/maps/*.xml` (ne ten s tvou mapou z kroku 5) a přepni na `<mapset enabled="no">`.
+
+**7. Zkontroluj, že aktivní layout je skutečný mapový styl, ne jen styl trasy** - výchozí konfigurace má `default_layout="Car"` na řádku s `<navit ...>` (najdeš přes `grep -n "<navit " ~/.navit/navit.xml`). To musí odpovídat jménu **plnohodnotného** layoutu (desítky vrstev - silnice, voda, budovy, popisky), ne odlehčenému layoutu jako "Route" (ten kreslí jen vypočtenou trasu, nic jiného - pokud by byl označený jako `active="1"`, přebije `default_layout` a appka by ukazovala prázdnou mapu i se správnými daty). Ověření:
+```
+grep -n '<layout name=' ~/.navit/navit.xml
+```
+Měl bys vidět `<layout name="Car"` **bez** `active="1"` u "Route" (pokud tam `active="1"` je, smaž ho - stačí jeden konflikt a appka nekreslí nic).
+
+**8. Nastav češtinu** (nepovinné, ale usnadní vyhledávání měst/adres bez nutnosti pokaždé zadávat zemi) - najdi na začátku souboru:
+```xml
+<config xmlns:xi="http://www.w3.org/2001/XInclude">
+```
+a změň na:
+```xml
+<config xmlns:xi="http://www.w3.org/2001/XInclude" language="cs_CZ">
+```
+
+**9. Přidej OSD panel** (nepovinné, ale pro dotykový headunit se hodí - tlačítka zoomu, rychlost, kompas, název ulice, zbývající čas/vzdálenost) - najdi v souboru sekci s `<osd ... command="gui.menu()" .../>` a za ni vlož:
+```xml
+<osd enabled="yes" type="button" x="-96" y="-96" command="zoom_in()" src="zoom_in.xpm"/>
+<osd enabled="yes" type="button" x="0" y="-96" command="zoom_out()" src="zoom_out.xpm"/>
+<osd enabled="yes" type="text" label="${vehicle.position_speed}" x="10" y="10" font_size="800" w="205" h="55" align="4" background_color="#1b0877cc"/>
+<osd enabled="yes" type="compass" align="0" font_size="350" x="10" y="70" w="100" h="100" background_color="#1b0877cc"/>
+<osd enabled="yes" type="text" label="${navigation.item.street_name}" x="-400" y="10" align="0" background_color="#1b0877cc" font_size="550" w="390" h="40"/>
+<osd enabled="yes" type="gps_status" x="-60" y="100" w="50" h="40" background_color="#1b0877cc"/>
+<osd enabled="yes" type="text" label="Cíl za ${navigation.item.destination_time[remaining]}" x="100" y="-30" w="270" h="30" background_color="#1b0877cc"/>
+<osd enabled="yes" type="text" label="Zbývá ${navigation.item.destination_length[named]}" x="370" y="-30" w="270" h="30" background_color="#1b0877cc"/>
+```
+Souřadnice (`x`, `y`, `w`, `h`) jsou v pixelech - kladná hodnota `x`/`y` počítá zleva/shora, záporná zprava/zdola. Hodnoty výše jsou startovní bod pro obrazovku 800×480 - klidně uprav podle toho, jak to vypadá na tvém displeji.
+
+Po tomhle by Navit měl ukazovat tvoji reálnou polohu, plnohodnotnou mapu, a umět naplánovat trasu s hlasovými pokyny.
+
+**Trasa hlásí `no route found, pos blocked`?** Znamená to, že Navit nedokáže tvoji aktuální pozici napojit na žádný projízdný úsek silnice pro aktuální profil vozidla. Nejčastější příčiny: (a) GPS pozice neleží dost blízko žádné nakreslené silnici (typicky při testování uvnitř budovy/dvora) - přibliž mapu a zkontroluj, jestli zelená tečka leží přímo na silnici; (b) `profilename` u `<vehicle>` neodpovídá žádnému skutečnému `<vehicleprofile name="...">` (viz krok 4). Rychlý test bez závislosti na živé GPS pozici: naplánuj trasu mezi dvěma ručně vybranými adresami/městy v menu appky - pokud tohle funguje, problém je jen v přesnosti/poloze aktuální GPS pozice, ne v konfiguraci.
+
+**Chceš radši GNOME Maps?** Pořád to jde - je to jen otázka změnit `navigace.py` (`COMMAND = ["gnome-maps"]`) a propojit GPS s GeoClue2 přes nástroj `gps-share` (unix socket, `network-nmea` zdroj v `/etc/geoclue/conf.d/`, plus explicitní povolení aplikace bez GNOME agenta). Přesné kroky už tahle verze README neobsahuje - byly součástí staršího řešení, které jsme kvůli němu nakonec opustili (viz Historie verzí, v13-v24) - je to řešitelné, jen podstatně komplikovanější a náchylnější na chyby, které se špatně diagnostikují, protože selhávají potichu bez chybové hlášky.
 
 ## Potřebné knihovny
 Tento seznam odpovídá tomu, co appka v aktuální podobě opravdu volá v kódu (`main.py` a moduly, které importuje/spouští) - žádné položky navíc "pro jistotu". Balíčky jsou pojmenované podle Ubuntu/Debianu (na jiné distribuci ARM desky se názvy mohou lišit).
@@ -153,20 +180,19 @@ Tento seznam odpovídá tomu, co appka v aktuální podobě opravdu volá v kód
  - `python3-pip`
  - `python3-pyqt5` - základ celého UI
  - `python3-pyqt5.qtwebengine` - vestavěné YouTube, YouTube Music a Web (`QWebEngineView`)
- - `python3-vlc` - Python vazby na VLC, používá hudební přehrávač i DAB modul (přehrávání staženého MP3 streamu z `welle-cli`)
- - `python3-requests` - modul Počasí (OpenWeatherMap API) i DAB (dotazování `welle-cli` na seznam stanic)
+ - `python3-vlc` - Python vazby na VLC, používá hudební přehrávač
+ - `python3-requests` - modul Počasí (OpenWeatherMap API)
  - `python3-dbus` - modul BT Hudba (čte info o přehrávané skladbě a ovládá přehrávání přes BlueZ AVRCP na systémové D-Bus sběrnici)
 
 **Systémové programy, které appka spouští:**
- - `vlc` - přehrávání videa (Video modul) i podkladová knihovna pro `python3-vlc` (Hudba, DAB)
+ - `vlc` - přehrávání videa (Video modul) i podkladová knihovna pro `python3-vlc` (Hudba)
  - `rtl-sdr` (poskytuje `rtl_fm`) + SDR dongle a anténa - FM Rádio modul. Funguje otestovaně i s RTL-SDR V4 (viz poznámka o V4 níže, kdyby přesto byly problémy se signálem).
  - `alsa-utils` (poskytuje `aplay`) - výstup zvuku z FM Rádia
- - `welle.io` (balíček poskytuje i `welle-cli`) - DAB modul. Appka používá jen bezhlavou `welle-cli` část, ne GUI aplikaci welle.io samotnou, takže QML runtime moduly (potřebné jen pro GUI) appka nevyžaduje.
- - `gnome-maps` - Navigace modul
- - `gpsd`, `gpsd-clients` - ověření, že GPS přijímač ("GPS mouse") sám o sobě funguje, nezávisle na GNOME Maps - viz modul Navigace výše
- - `cargo`, `libudev-dev`, `pkg-config`, `build-essential`, `git` - sestavení `gps-share` ze zdroje (propojuje GPS s GeoClue2/GNOME Maps)
- - `geoclue-2-demo` - ověření, že GeoClue2 (a tedy GNOME Maps) reálně dostává polohu z GPS
- - `wmctrl` - doporučeno pro Navigaci: když je okno GNOME Maps už otevřené, appka ho jen přepne do popředí místo spouštění druhé instance, a navíc ho přepne do fullscreen (stejně jako appka samotná), aby kolem něj nebylo vidět GNOME horní lištu. Bez `wmctrl` modul pořád funguje, jen jako běžné okno s GNOME lištou kolem.
+ - `welle.io` - DAB modul (appka spouští celou GUI aplikaci `welle-io`, ne jen bezhlavý `welle-cli` - viz poznámka o QML modulech níže, kdyby se nespustila)
+ - `navit-gui-internal`, `navit-graphics-gtk-drawing-area`, `navit-data` - Navigace modul. Samotný balíček `navit` na Ubuntu/Debianu neobsahuje GUI vůbec - je potřeba nainstalovat i tyhle. Nepotřebuje `gnome-maps`/GeoClue2 - čte GPS přímo z `gpsd` (viz níže).
+ - `maptool` - převod stažených OpenStreetMap dat (Geofabrik) do binárního formátu, který Navit umí zobrazit - jinak appka ukáže jen prázdnou mapu, i když GPS funguje správně
+ - `gpsd`, `gpsd-clients` - GPS přijímač ("GPS mouse") - Navit se na běžící `gpsd` napojuje přímo (`gpsd://localhost`), takže `gpsd` tu není jen pro test, ale musí běžet trvale jako služba - viz modul Navigace výše.
+ - `wmctrl` - doporučeno pro DAB a Navigaci: když je okno welle-io/Navit už otevřené, appka ho jen přepne do popředí místo spouštění druhé instance, a navíc ho přepne do fullscreen (stejně jako appka samotná), aby kolem něj nebylo vidět GNOME horní lištu. Bez `wmctrl` oba moduly pořád fungují, jen jako běžné okno s GNOME lištou kolem.
  - `gnome-control-center` - Wi-Fi a Výstup zvuku v Nastavení (appka cílí na GNOME desktop)
  - `network-manager-gnome` (poskytuje `nm-connection-editor`) - záložní Wi-Fi nástroj, pokud by `gnome-control-center` chybělo
  - `pavucontrol` - záložní nástroj pro výběr výstupního zařízení zvuku, pokud by `gnome-control-center` chybělo
@@ -178,8 +204,9 @@ Instalace na Ubuntu/Debianu (uprav podle skutečně nainstalovaného desktopu):
 ```
 sudo apt install python3 python3-pip python3-pyqt5 python3-pyqt5.qtwebengine \
     python3-vlc python3-requests python3-dbus vlc rtl-sdr alsa-utils welle.io \
-    gnome-maps wmctrl gnome-control-center network-manager-gnome pavucontrol \
-    bluez bluez-tools pulseaudio-utils
+    navit-gui-internal navit-graphics-gtk-drawing-area navit-data maptool gpsd \
+    gpsd-clients wmctrl gnome-control-center network-manager-gnome \
+    pavucontrol bluez bluez-tools pulseaudio-utils
 
 # jedno z těchto dvou, podle toho jestli systém běží na PulseAudio nebo
 # PipeWire (nutné, aby šel na desku streamovat zvuk z telefonu):
@@ -208,7 +235,7 @@ Pokud i po tomhle telefon nenabídne desku jako reproduktor v přehrávání hud
 
 Instalátor si tyhle balíčky nainstaluje sám (`kiosk/install-kiosk.sh`), ruční instalace není potřeba - jsou tu uvedené jen pro přehled.
 
-**Poznámka k welle.io/welle-cli (DAB):** appka spouští jen `welle-cli`, ne GUI aplikaci welle.io - žádné QML moduly navíc tedy nejsou potřeba. Kdybys ale chtěl zprovoznit i samotné GUI welle.io (mimo appku, jen pro ladění signálu), na Qt6 systémech (ověřeno na Orange Pi 5 Pro/Armbian) pomůže `sudo apt install qml6-module-qtcore qml6-module-qtquick-dialogs`, na starších Qt5 systémech `qml-module-qtquick2 qml-module-qtquick-controls qml-module-qtquick-controls2 qml-module-qtquick-dialogs qml-module-qtquick-layouts qml-module-qtgraphicaleffects qml-module-qtcharts`. Spusť `welle-io` přímo v terminálu a přečti si chybovou hlášku (`module "XYZ" is not installed`), ať víš, který balíček přesně chybí.
+**Poznámka k welle.io (DAB):** appka spouští celou GUI aplikaci `welle-io`. Pokud se nespustí vůbec (ani přímo v terminálu mimo appku), skoro jistě chybí QML moduly - je to Qt/QML aplikace. Spusť `welle-io` přímo v terminálu a přečti si chybovou hlášku (`module "XYZ" is not installed`), ať víš, který balíček přesně chybí. Na Qt6 systémech (ověřeno na Orange Pi 5 Pro/Armbian) pomůže `sudo apt install qml6-module-qtcore qml6-module-qtquick-dialogs`, na starších Qt5 systémech `qml-module-qtquick2 qml-module-qtquick-controls qml-module-qtquick-controls2 qml-module-qtquick-dialogs qml-module-qtquick-layouts qml-module-qtgraphicaleffects qml-module-qtcharts`.
 
 **Poznámka k RTL-SDR V4:** V4 používá jiný tuner (R828D) než starší V3 a u některých systémů/starších verzí balíčku `rtl-sdr` býval problém (žádný signál, špatná frekvence, zkreslený zvuk) - vyžadovalo to aktualizovaný ovladač (fork RTL-SDR Blog). Na aktuálních systémech uvedených v tomhle READMU ale balíčkový `rtl-sdr` s V4 dongle otestovaně funguje bez problémů (jak pro FM Rádio, tak pro DAB), takže postup níže potřebuješ jen v případě, že bys s obyčejným `rtl-sdr` narazil na některý z těch příznaků:
 ```
@@ -246,7 +273,7 @@ Pár míst v appce dělá pravidelně se opakující práci na pozadí (kontrola
 ## Automatický start (bez nutnosti se přihlašovat/spouštět appku ručně)
 Pro nasazení v autě appka nemá běžet jen tehdy, když ji někdo ručně spustí - má naskočit sama, na celou obrazovku, hned po zapnutí desky. Ve složce `kiosk/` jsou dva různé způsoby, jak toho dosáhnout - liší se v tom, jestli pod appkou běží normální GNOME desktop, nebo ne.
 
-**Doporučený způsob: appka nad běžícím GNOME (`install-gnome-autostart.sh`).** Appka se spustí automaticky hned po přihlášení do normální GNOME session a běží přes celou obrazovku nad ní. V reálném provozu (ověřeno na Orange Pi 5 Pro) se ukázalo být spolehlivější než alternativa níže - fullscreen okna, dotyková klávesnice i párování Bluetooth fungují správně, protože běží skutečný `gnome-shell` s plnou podporou window manageru, a GeoClue2 (poloha pro GNOME Maps) funguje bez dalšího dolaďování, protože `gnome-shell` běží jako jeho agent automaticky. Volitelný skript `trim-gnome.sh` (viz níže) pak zvládne většinu té "ceny navíc" (spotřeba paměti/CPU běžícího GNOME) srazit dolů bez ztráty těchhle výhod.
+**Doporučený způsob: appka nad běžícím GNOME (`install-gnome-autostart.sh`).** Appka se spustí automaticky hned po přihlášení do normální GNOME session a běží přes celou obrazovku nad ní. V reálném provozu (ověřeno na Orange Pi 5 Pro) se ukázalo být spolehlivější než alternativa níže - fullscreen okna, dotyková klávesnice i párování Bluetooth fungují správně, protože běží skutečný `gnome-shell` s plnou podporou window manageru. Volitelný skript `trim-gnome.sh` (viz níže) pak zvládne většinu té "ceny navíc" (spotřeba paměti/CPU běžícího GNOME) srazit dolů bez ztráty těchhle výhod.
 
 **Alternativa: appka bez GNOME vůbec (`install-kiosk.sh`).** Bez GDM/gnome-shellu, jen holý X server + odlehčený okenní manažer *matchbox* + appka. V teorii úspornější, ale v reálném testování se ukázaly problémy - dotyková klávesnice (`onboard`) se špatně vykresluje a nezabírá celou obrazovku, a některá okna se chovají nespolehlivě, protože `matchbox` nemá plnou podporu pro fullscreen/dialogová okna jako skutečný desktop. Necháváme ho zdokumentovaný pro slabší desky, ale defaultně doporučujeme variantu s GNOME výše.
 
@@ -326,7 +353,7 @@ sudo reboot
 
 Důležité omezení, o kterém stojí za to vědět: GNOME nedává zvenčí žádný spolehlivý způsob, jak tuhle klávesnici ručně vyvolat na povel - potvrzeno přímo vývojářem gnome-shellu (žádné D-Bus rozhraní pro to neexistuje, jen automatické zobrazení na focus). Appka proto v tomhle režimu nemá žádné tlačítko na ruční zapnutí/vypnutí klávesnice - pokud by se auto-show v nějakém konkrétním poli nespustilo, jinou možnost než zkusit kliknout znovu / do jiného pole bohužel není.
 
-**Pokud jsi zvolil variantu bez GNOME**, GNOME klávesnice bez gnome-shellu vůbec nefunguje, takže instalátor tam pořád používá `onboard` - ten funguje nezávisle na desktop prostředí a má navíc vlastní D-Bus rozhraní pro ruční zapnutí/vypnutí, které appka využívá přes ikonku klávesnice v dolní liště. V reálném provozu se ale ukázalo, že se `onboard` pod `matchbox` může vykreslovat nespolehlivě a ořezaně - v tom případě je jednodušší přejít na variantu s GNOME výše. Ikonka klávesnice v dolní liště je proto v appce natrvalo - v GNOME režimu jen nemá co ovládat (`onboard` tam neběží), takže klepnutí na ni v tichosti nic neudělá.
+**Pokud jsi zvolil variantu bez GNOME**, GNOME klávesnice bez gnome-shellu vůbec nefunguje, takže instalátor tam pořád používá `onboard` - ten funguje nezávisle na desktop prostředí. V reálném provozu se ale ukázalo, že se `onboard` pod `matchbox` může vykreslovat nespolehlivě a ořezaně - v tom případě je jednodušší přejít na variantu s GNOME výše. Appka sama v žádném režimu nemá tlačítko pro ruční zapnutí/vypnutí klávesnice (dřív mělo, ale bez fungujícího protějšku na GNOME straně to bylo jen matoucí mrtvé tlačítko - bylo odstraněné). Pro `onboard` jde klávesnici ručně přepnout přes `dbus-send --session --type=method_call --dest=org.onboard.Onboard /org/onboard/Onboard/Keyboard org.onboard.Onboard.Keyboard.ToggleVisible` v terminálu, kdyby to bylo někdy potřeba mimo appku.
 
 ### Fyzické tlačítko napájení
 Pokud má deska/displej připojené fyzické tlačítko napájení (ACPI power key), stojí za to nastavit, aby jen rovnou vypnulo zařízení, místo aby čekalo na potvrzení v nějakém dialogu:
@@ -345,6 +372,22 @@ gsettings set org.gnome.SessionManager logout-prompt false
 ## Historie verzí
 Stručný přehled - podrobnosti k jednotlivým bodům jsou popsané výš u příslušných modulů/sekcí.
 
+- **v29 (finální verze)** - Kompletní průchod celým README a projektem. Sekce Navigace přepsaná a doplněná o ověřené kroky z externího návodu (OpenStreetMap Wiki, Navit/Ubuntu): vypnutí ukázkové mapy, nastavení češtiny, OSD panel pro dotykovou obrazovku (zoom tlačítka, rychlost, kompas, název ulice, zbývající čas/vzdálenost) - GPS připojení zůstalo u `gpsd` (VK-162 je kabelová USB myš, návod počítá s Bluetooth GPS). Zahrnuty i všechny poznatky z reálného ladění (`default_layout` musí odpovídat plnohodnotnému stylu jako "Car", ne odlehčenému stylu trasy jako "Route"; `no route found, pos blocked` = GPS pozice mimo silnici nebo špatný profil vozidla). Opravené poslední zapomenuté zmínky GNOME Maps v popisech, které už neodpovídaly skutečnému kódu (DAB a Navigace dávno spouští `welle-io`/`navit`, ne GNOME aplikace).
+
+- **v28** - Oprava syntaxe `maptool` v kroku 5 (Navigace) - `maptool` bere vstupní soubor přes `-i` a `--protobuf`, ne jako druhý holý argument (`Only one non-option argument allowed.`). Opraveno na `maptool --protobuf -i vstup.osm.pbf výstup.bin`.
+
+- **v27** - Oprava kroku 3 v postupu pro Navigaci - mylně jsem předpokládal, že Navit si při prvním spuštění sám zkopíruje výchozí konfiguraci do `~/.navit/navit.xml`. Ve skutečnosti čte jen systémově nainstalovanou konfiguraci (`/etc/navit/navit.xml` nebo `/usr/share/navit/navit.xml`) a do domovské složky nic nekopíruje - proto tam soubor předtím nebyl vůbec k nalezení. Krok teď obsahuje ruční zkopírování výchozí konfigurace.
+
+- **v26** - Opravený postup pro mapová data v Navitu - dřív zmíněné menu "Mapy → Stáhnout mapu" v aktuální verzi neexistuje/nebylo ověřené. Nahrazeno skutečně zdokumentovaným postupem: stažení výřezu z Geofabriku (`.osm.pbf`) a převod vlastním nástrojem `maptool` (nový balíček v seznamu závislostí) do binárního formátu, který se pak přidá do `~/.navit/navit.xml`.
+
+- **v25** - Oprava instalace Navitu - balíček `navit` na Ubuntu/Debianu neobsahuje žádné grafické rozhraní (`FATAL: No GUI available.` hned po spuštění), je nutně potřeba i `navit-gui-internal` a `navit-graphics-gtk-drawing-area` zvlášť. Aktualizované ve všech třech místech v README (hlavní instalační příkaz, seznam knihoven, krok 3 v postupu pro Navigaci).
+
+- **v24** - Navigace přepnutá z GNOME Maps na **Navit** - navigační software navržený přímo pro carputer nasazení, s vlastním čtením GPS přímo z `gpsd`, bez GeoClue2. Řeší to napořád celou třídu problémů, se kterými jsme se prokousávali (`gps-share`, oprávnění na socketu, GeoClue2 agent) - Navit se GeoClue2 vůbec netýká. GNOME Maps zůstává zdokumentované jako alternativa pro toho, kdo by ji přesto chtěl.
+
+- **v23** - Opravená skutečná příčina, proč GNOME Maps nikdy nedostávaly polohu z GPS i po správné konfiguraci GeoClue2 (viz sekce Navigace): `gps-share` běží jako root a vytvářel unix socket s právy `755` (root:root), na který systémový účet `geoclue` neměl zápisové právo - připojení k unixovému socketu bez zápisu selže úplně potichu, bez chyby v logu, takže to vypadalo jako "nic nefunguje, ale nikde není vidět proč". Přidané `UMask=0000` do systemd jednotky `gps-share.service`, ať socket vznikne s právy `666` a `geoclue` se k němu dostane.
+
+- **v22** - DAB vrácený zpět na spouštěč skutečné aplikace `welle-io` (vlastní modul nad `welle-cli` z v19 se v praxi ukázal jako zbytečná komplikace navíc - `welle-io` má vlastní seznam stanic, slideshow i lepší metadata). Odstraněné mrtvé tlačítko pro ruční zapnutí/vypnutí klávesnice v docku - GNOME variantě k ničemu nepomáhalo (žádné API pro to neexistuje) a jen matlo.
+- **v21** - Oprava neviditelného textu v rozbalovacím seznamu kanálů DAB (bílý text na bílém pozadí - Qt nestyluje rozbalený seznam automaticky stejně jako zavřené pole, potřebuje vlastní pravidlo). Kompletní kontrola kódu napříč celou appkou i README - pár zastaralých komentářů/hlášek opravených na přesný current stav (žádné funkční chyby nenalezené mimo tu s DAB seznamem).
 - **v20** - GNOME autostart už nepoužívá `onboard` vůbec, jen vestavěnou GNOME klávesnici (Screen Keyboard) - ověřeno, že GNOME nemá žádné rozhraní pro ruční vyvolání klávesnice zvenčí, takže appka v tomhle režimu nemá ani tlačítko pro ruční zapnutí/vypnutí. `onboard` zůstává jen u alternativní bare-X varianty (`install-kiosk.sh`), kde GNOME klávesnice bez gnome-shellu nefunguje.
 - **v19** - Vlastní modul DAB (nahrazuje spouštěč welle.io GUI, viz modul DAB výše), skript `trim-gnome.sh` na omezení zátěže GNOME, README přeorganizované (historie verzí přesunutá sem na konec, popisy modulů rozšířené).
 - **v18** - Fullscreen napříč appkami (welle.io/GNOME Maps přes `wmctrl`), Web vestavěný místo externího Chromia, spolehlivější dotyková klávesnice (přepnutí na X11 + `onboard` vedle GNOME klávesnice), Nastavení: Bluetooth tlačítko nahrazené Výstupem zvuku, fronta v hudebním přehrávači.
