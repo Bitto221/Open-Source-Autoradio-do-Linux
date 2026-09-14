@@ -20,7 +20,7 @@ import style
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-API_KEY = "4e51d8b7ce09f005478ff9f2fe9411c0"
+API_KEY = ""
 CITY = "Prague"
 
 CACHE_FILE = os.path.join(BASE_DIR, "weather_cache.json")
