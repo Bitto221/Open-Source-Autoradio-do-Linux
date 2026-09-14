@@ -20,9 +20,6 @@ class ThemeSelector(QWidget):
     def __init__(self, parent=None, on_theme_changed=None):
         super().__init__(parent)
 
-        # Called with (color, wallpaper_path) right after a theme is
-        # picked, so the shell can restyle everything live - no more
-        # killing and relaunching the whole app.
         self.on_theme_changed = on_theme_changed
 
         self.setObjectName("mainWindow")
@@ -91,7 +88,6 @@ class ThemeSelector(QWidget):
         if self.on_theme_changed:
             self.on_theme_changed(color, wallpaper)
         else:
-            # standalone mode - just restyle this window as a preview
             self.setStyleSheet(style.stylesheet())
 
 

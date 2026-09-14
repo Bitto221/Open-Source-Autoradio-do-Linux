@@ -122,10 +122,6 @@ class FmRadio(QWidget):
 
         self.refresh_presets()
 
-    # ------------------------------------------------------------------
-    # playback
-    # ------------------------------------------------------------------
-
     def start_radio(self):
         self.stop_radio()
 
@@ -187,22 +183,13 @@ class FmRadio(QWidget):
     def _restart_if_playing(self):
         if self.is_playing:
             self.start_radio()
-        # Debounced along with the restart above - restyling 6 preset
-        # buttons (unpolish/polish) on every single tick while dragging
-        # the slider was a needless stutter source; a highlight that
-        # settles ~0.5s after the drag stops is imperceptible here.
         self.refresh_presets()
-
-    # ------------------------------------------------------------------
-    # presets
-    # ------------------------------------------------------------------
 
     def preset_clicked(self, index):
         if index < len(self.presets):
             freq = self.presets[index]
             self.slider.setValue(int(round(freq * 10)))
         elif index == len(self.presets):
-            # tapped the empty "add" slot - save the current frequency
             self.save_current_preset()
 
     def save_current_preset(self):

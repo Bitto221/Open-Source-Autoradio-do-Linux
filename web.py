@@ -7,15 +7,6 @@ URL = "https://www.google.com"
 
 
 class WebApp(QWidget):
-    """General web browsing, embedded directly in the shell
-    (QWebEngineView) - same reasoning as YouTube/YouTube Music: a
-    separate chromium-browser process has to cold-start an entire new
-    browser (its own renderer/GPU process, shared libraries, profile)
-    every time, which is why it felt noticeably slower to open than the
-    embedded pages that reuse the QtWebEngine runtime already running
-    inside this same process. Embedding it here also means it shares
-    the exact same fullscreen presentation as every other page - no
-    separate window, no GNOME top bar flashing in."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -48,5 +39,3 @@ if __name__ == "__main__":
     window.show()
     sys.exit(app.exec_())
 
-# hotový kod
-# verze 2.0 - vestavěné okno, ne samostatný chromium proces

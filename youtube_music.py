@@ -7,9 +7,6 @@ URL = "https://music.youtube.com"
 
 
 class YouTubeMusicApp(QWidget):
-    """YouTube Music embedded directly in the shell (QWebEngineView) so it
-    opens instantly and shares the same frame/format as the other pages -
-    no separate chromium window, no browser chrome."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -41,6 +38,3 @@ if __name__ == "__main__":
     window.setFixedSize(800, 480)
     window.show()
     sys.exit(app.exec_())
-
-# hotový kod
-# verze 4.0 - vestavěné okno, ne samostatný chromium proces

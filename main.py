@@ -16,18 +16,6 @@ ICON_PATH = os.path.join(BASE_DIR, "icons")
 
 sys.path.insert(0, BASE_DIR)
 
-
-# ---------------------------------------------------------------------------
-# App catalogue
-#
-# kind = "embed"    -> a QWidget page built in-process and swapped into the
-#                       central QStackedWidget (no new python window!)
-# kind = "external" -> a real external program that needs its own OS window
-#                       (only GNOME Maps for Navigace - everything else that
-#                       used to be external, like welle.io or a browser, is
-#                       now its own embedded page instead)
-# ---------------------------------------------------------------------------
-
 APPS = [
     {"id": "music",    "label": "Hudba",     "icon": "music_player.png",  "kind": "embed"},
     {"id": "youtube",  "label": "YouTube",   "icon": "youtube.png",       "kind": "embed"},
@@ -43,14 +31,10 @@ APPS = [
     {"id": "nav",      "label": "Navigace",  "icon": "navigation.png",    "kind": "external"},
 ]
 
-# order the bottom dock shortcuts show up in: first half - HOME - second half
 DOCK_ORDER = [a["id"] for a in APPS]
 
 
 def _safe_import(module_name, attr):
-    """Best-effort import so a missing optional dependency (python-vlc,
-    requests, PyQtWebEngine, ...) disables just that one app tile instead
-    of crashing the whole launcher."""
     try:
         module = __import__(module_name)
         return getattr(module, attr)
@@ -78,9 +62,6 @@ EXTERNAL_LAUNCHERS = {
     "nav": navigace.launch,
 }
 
-# Heavy pages (embedded browser engine / network call on first use) are
-# only built the first time the user actually opens them - keeps startup
-# fast instead of spinning up several web engine instances up front.
 EAGER_FACTORIES = {
     "music":    (MusicPlayer, "Hudba"),
     "fm":       (FmRadio, "FM Rádio"),
@@ -99,8 +80,6 @@ LAZY_FACTORIES = {
 
 
 class UnavailablePage(QWidget):
-    """Shown instead of a page whose optional dependency is missing, so
-    the launcher keeps working even with an incomplete install."""
 
     def __init__(self, label, parent=None):
         super().__init__(parent)
@@ -126,8 +105,6 @@ class UnavailablePage(QWidget):
 
 
 class LoadingPlaceholder(QWidget):
-    """Reserves a page's slot in the stack until its (heavier) real
-    widget is built on first visit - see MainWindow._ensure_loaded."""
 
     def __init__(self, label, parent=None):
         super().__init__(parent)
@@ -147,7 +124,6 @@ class LoadingPlaceholder(QWidget):
 
 
 class HomeScreen(QWidget):
-    """The Android-launcher style grid of app tiles."""
 
     def __init__(self, on_launch, parent=None):
         super().__init__(parent)
@@ -208,18 +184,14 @@ class MainWindow(QWidget):
         self.setObjectName("shellBackground")
         self.setAttribute(Qt.WA_StyledBackground, True)
 
-        self.page_index = {}     # app id -> stacked widget index
-        self.page_widget = {}    # app id -> widget instance
-        self.dock_buttons = {}   # app id / "home" -> QToolButton
+        self.page_index = {}
+        self.page_widget = {}
+        self.dock_buttons = {} 
 
         self._build_ui()
         self.apply_theme(style.get_color(), style.get_wallpaper())
 
         self.showFullScreen()
-
-    # ------------------------------------------------------------------
-    # UI construction
-    # ------------------------------------------------------------------
 
     def _build_ui(self):
         root = QVBoxLayout(self)
@@ -238,11 +210,6 @@ class MainWindow(QWidget):
         shell.addWidget(self._build_topbar())
 
         self.stack = QStackedWidget()
-        # Hard cap on the content area's height so that no single page's
-        # content (e.g. once real data loads and labels/images grow) can
-        # ever inflate the whole window and push the dock bar off the
-        # bottom of the screen - worst case a page's own content clips,
-        # but the dock/topbar chrome always stays put and visible.
         screen = QApplication.primaryScreen()
         if screen is not None:
             available_height = screen.size().height() - self.TOPBAR_HEIGHT - self.DOCK_HEIGHT
@@ -348,10 +315,6 @@ class MainWindow(QWidget):
         self.dock_buttons["home"] = btn
         return btn
 
-    # ------------------------------------------------------------------
-    # page registration
-    # ------------------------------------------------------------------
-
     def _register_page(self, app_id, widget):
         idx = self.stack.addWidget(widget)
         self.page_index[app_id] = idx
@@ -367,20 +330,14 @@ class MainWindow(QWidget):
                 return cls(on_theme_changed=self.apply_theme)
             return cls()
         except Exception:
-            # construction can fail for environment reasons even when the
-            # module imported fine (e.g. VLC plugin cache not ready,
-            # audio device missing) - fall back instead of crashing the
-            # whole launcher.
             traceback.print_exc()
             return UnavailablePage(label)
 
     def _register_embedded_apps(self):
-        # built immediately - lightweight, no network/engine startup cost
         for app_id, (cls, label) in EAGER_FACTORIES.items():
             widget = self._instantiate(app_id, cls, label)
             self._register_page(app_id, widget)
 
-        # reserved now, built lazily on first visit (see _ensure_loaded)
         self.lazy_factories = dict(LAZY_FACTORIES)
         for app_id, (cls, label) in LAZY_FACTORIES.items():
             self._register_page(app_id, LoadingPlaceholder(label))
@@ -401,10 +358,6 @@ class MainWindow(QWidget):
         self.stack.insertWidget(idx, widget)
         self.page_widget[app_id] = widget
 
-    # ------------------------------------------------------------------
-    # navigation
-    # ------------------------------------------------------------------
-
     def go_to(self, app_id):
         app = next((a for a in APPS if a["id"] == app_id), None)
 
@@ -415,8 +368,6 @@ class MainWindow(QWidget):
                     launcher()
                 except Exception as e:
                     print(f"[CHYBA] Spuštění '{app_id}' selhalo: {e}")
-            # external apps get their own OS window - don't change our
-            # stack, just briefly reflect the tap and move focus back.
             btn = self.dock_buttons.get(app_id)
             if btn:
                 btn.setChecked(False)
@@ -435,10 +386,6 @@ class MainWindow(QWidget):
         for key, btn in self.dock_buttons.items():
             if btn.isCheckable():
                 btn.setChecked(key == app_id)
-
-    # ------------------------------------------------------------------
-    # theme + misc
-    # ------------------------------------------------------------------
 
     def apply_theme(self, color, wallpaper):
         style.refresh()
@@ -470,10 +417,6 @@ class MainWindow(QWidget):
             if widget is not None and hasattr(widget, "stop_playback"):
                 widget.stop_playback()
 
-        # Weather's fetch runs in a background QThread - if one is still
-        # in flight when the app quits, Qt would try to destroy it while
-        # running, which is a hard crash ("QThread: Destroyed while
-        # thread is still running"). Give it a moment to finish first.
         weather = self.page_widget.get("weather")
         fetcher = getattr(weather, "_fetcher", None)
         if fetcher is not None and fetcher.isRunning():
@@ -487,8 +430,3 @@ if __name__ == "__main__":
     window = MainWindow()
     window.show()
     sys.exit(app.exec_())
-
-# hotový kod
-# verze 10.0 - odebrány vestavěné Mapy (nahrazuje je Navigace/GNOME Maps),
-# přidán BT Hudba - zobrazení a ovládání aktuálně přehrávané skladby
-# streamované z telefonu přes Bluetooth (AVRCP/BlueZ)

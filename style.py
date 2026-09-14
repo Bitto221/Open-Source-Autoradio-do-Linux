@@ -18,8 +18,6 @@ DEFAULT_WALLPAPER = os.path.join(
     "purple.jpg"
 )
 
-# Central place for the theme catalogue so main.py, themes.py and anything
-# else that needs it stays in sync (single source of truth).
 THEMES = {
     "Purple": ("#6a4df4", "purple.jpg"),
     "Red":    ("#ff0033", "red.jpg"),
@@ -29,10 +27,6 @@ THEMES = {
     "Pink":   ("#ff00aa", "pink.jpg"),
 }
 
-
-# ---------------------------------------------------------------------------
-# theme persistence
-# ---------------------------------------------------------------------------
 
 def save_theme(color, wallpaper):
 
@@ -46,8 +40,6 @@ def save_theme(color, wallpaper):
 
 
 def load_theme():
-    """Always reads theme_settings.json fresh from disk, so callers see
-    the current theme even if it changed since the app started."""
 
     if not os.path.exists(SETTINGS_FILE):
 
@@ -81,10 +73,6 @@ def load_theme():
             "wallpaper": DEFAULT_WALLPAPER
         }
 
-
-# Kept for backwards compatibility with any code importing these directly.
-# They reflect the theme at *import time* - use get_color()/get_wallpaper()
-# if you need the live value after a theme change.
 THEME = load_theme()
 MAIN_COLOR = THEME["color"]
 WALLPAPER = THEME["wallpaper"]
@@ -99,19 +87,11 @@ def get_wallpaper():
 
 
 def refresh():
-    """Re-reads the theme file and updates the module level shortcuts.
-    Call this after save_theme() so old-style `style.MAIN_COLOR` usages
-    (and this module's own stylesheet builders) reflect the new theme."""
     global THEME, MAIN_COLOR, WALLPAPER
     THEME = load_theme()
     MAIN_COLOR = THEME["color"]
     WALLPAPER = THEME["wallpaper"]
     return THEME
-
-
-# ---------------------------------------------------------------------------
-# color helpers
-# ---------------------------------------------------------------------------
 
 def _clamp(v):
     return max(0, min(255, int(v)))
@@ -143,10 +123,6 @@ def darken(color, amount=0.35):
     b = _clamp(b * (1 - amount))
     return f"#{r:02x}{g:02x}{b:02x}"
 
-
-# ---------------------------------------------------------------------------
-# fonts - retro "digital dashboard" look with safe fallbacks
-# ---------------------------------------------------------------------------
 
 _DIGITAL_CANDIDATES = [
     "Share Tech Mono", "DSEG7 Classic", "Digital-7", "Consolas",
@@ -186,9 +162,6 @@ def normal_font(size=14):
     return QFont(family, size)
 
 
-# ---------------------------------------------------------------------------
-# stylesheets
-# ---------------------------------------------------------------------------
 
 def stylesheet(color=None):
     """Global stylesheet applied to every embedded page. Retro dashboard

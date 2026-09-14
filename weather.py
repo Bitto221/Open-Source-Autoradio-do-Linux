@@ -27,9 +27,6 @@ CACHE_FILE = os.path.join(BASE_DIR, "weather_cache.json")
 
 
 class _WeatherFetcher(QThread):
-    """Does the actual HTTP request off the GUI thread - requests.get()
-    blocking for up to its 5s timeout right in the middle of the app's
-    main thread would freeze the whole UI the moment this page opens."""
 
     succeeded = pyqtSignal(dict)
     failed = pyqtSignal()
@@ -147,9 +144,6 @@ class WeatherApp(QWidget):
             json.dump(data, f)
 
     def load_weather(self):
-        # Kick off the request in the background; UI updates happen in
-        # _on_fetch_succeeded/_on_fetch_failed once it's done, back on
-        # the GUI thread (Qt queues the signal delivery automatically).
         if self._fetcher is not None and self._fetcher.isRunning():
             return
 
@@ -221,7 +215,3 @@ if __name__ == "__main__":
     win.setFixedSize(800, 480)
     win.show()
     sys.exit(app.exec_())
-
-# hotovy kod
-# verze 6.0 - síťový dotaz běží na pozadí (QThread), už neblokuje GUI
-# vlákno při otevření stránky

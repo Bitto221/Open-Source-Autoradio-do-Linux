@@ -23,7 +23,6 @@ class MusicPlayer(QWidget):
         self.player = self.vlc_instance.media_player_new()
         self.player.audio_set_volume(100)
 
-        # Queue - a simple list of file paths + which one is current.
         self.queue = []
         self.current_index = -1
 
@@ -101,10 +100,6 @@ class MusicPlayer(QWidget):
         self._refresh_queue_controls()
 
     def showEvent(self, event):
-        # Playback itself (VLC) keeps running regardless - this timer
-        # only drives the on-screen progress bar and auto-advance, so
-        # there's no reason to keep polling it while some other page
-        # is on screen.
         super().showEvent(event)
         self.update_progress()
         self.timer.start(400)
@@ -113,18 +108,7 @@ class MusicPlayer(QWidget):
         super().hideEvent(event)
         self.timer.stop()
 
-    # ------------------------------------------------------------------
-    # queue management
-    # ------------------------------------------------------------------
-
     def select_songs(self):
-        # Uses the same simple static dialog call as video.py (which
-        # works reliably) instead of a manually built QFileDialog -
-        # forcing DontUseNativeDialog + a fixed size matching the
-        # fullscreen main window could open the dialog behind it under
-        # a bare window manager (no decorations to bring it to front).
-        # getOpenFileNames (plural) lets the user select several songs
-        # at once, appended to the queue.
         files, _ = QFileDialog.getOpenFileNames(
             self,
             "Vyberte skladby",
@@ -159,7 +143,6 @@ class MusicPlayer(QWidget):
         if self.current_index + 1 < len(self.queue):
             self._play_index(self.current_index + 1)
         elif not auto:
-            # manual "next" at the end of the queue - nothing further
             pass
 
     def play_previous(self):
@@ -197,10 +180,6 @@ class MusicPlayer(QWidget):
             has_queue and self.current_index + 1 < len(self.queue)
         )
 
-    # ------------------------------------------------------------------
-    # playback / progress
-    # ------------------------------------------------------------------
-
     def update_progress(self):
         if self.player.get_state() == vlc.State.Ended:
             self.play_next(auto=True)
@@ -231,6 +210,3 @@ if __name__ == "__main__":
     window.setWindowFlags(Qt.Window)
     window.show()
     sys.exit(app.exec_())
-
-# hotový kod
-# verze 9.0 - výběr více skladeb najednou a fronta přehrávání

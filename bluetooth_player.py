@@ -26,16 +26,6 @@ STATUS_LABELS = {
 
 
 class BluetoothPlayer(QWidget):
-    """Shows the track currently playing on a phone connected over
-    Bluetooth (A2DP + AVRCP), read from BlueZ's org.bluez.MediaPlayer1
-    D-Bus interface - works with any Bluetooth adapter BlueZ can see,
-    including a plain USB dongle. Requires a phone actually streaming
-    audio to this device (see README - párování a A2DP).
-
-    The polling timer only runs while this page is actually the visible
-    one (see showEvent/hideEvent) - each tick is a blocking D-Bus round
-    trip, so leaving it running in the background on every other page
-    was causing periodic UI stutter across the whole app."""
 
     POLL_INTERVAL_MS = 2000
 
@@ -103,10 +93,6 @@ class BluetoothPlayer(QWidget):
         self.play_btn.clicked.connect(self._toggle_play)
         self.next_btn.clicked.connect(lambda: self._call("Next"))
 
-        # Moved in from the dock - this is the "discoverable/pairable"
-        # switch a phone needs to find this device in the first place,
-        # kept right next to the thing it's actually for instead of a
-        # second separate Bluetooth icon in the bottom bar.
         self.visible_btn = QPushButton("📶  Zviditelnit pro párování")
         self.visible_btn.setObjectName("ghost")
         self.visible_btn.setCheckable(True)
@@ -131,10 +117,6 @@ class BluetoothPlayer(QWidget):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.refresh)
 
-    # ------------------------------------------------------------------
-    # only poll while this page is actually visible
-    # ------------------------------------------------------------------
-
     def showEvent(self, event):
         super().showEvent(event)
         self.refresh()
@@ -144,24 +126,13 @@ class BluetoothPlayer(QWidget):
         super().hideEvent(event)
         self.timer.stop()
 
-    # ------------------------------------------------------------------
-    # discoverable/pairable toggle
-    # ------------------------------------------------------------------
-
     def _on_visible_toggled(self, checked):
         set_bluetooth_discoverable(checked)
         self.visible_btn.setText(
             "📶  Viditelné - párování aktivní" if checked else "📶  Zviditelnit pro párování"
         )
 
-    # ------------------------------------------------------------------
-    # BlueZ D-Bus lookups
-    # ------------------------------------------------------------------
-
     def _find_player(self):
-        """Returns (object_path, properties_dict) for the first BlueZ
-        MediaPlayer1 object found (i.e. a connected device offering
-        AVRCP media info), or None if none is available right now."""
         if self.bus is None:
             return None
 
@@ -196,10 +167,6 @@ class BluetoothPlayer(QWidget):
             self._call("Pause")
         else:
             self._call("Play")
-
-    # ------------------------------------------------------------------
-    # UI refresh
-    # ------------------------------------------------------------------
 
     def _set_controls_enabled(self, enabled):
         for b in (self.prev_btn, self.play_btn, self.next_btn):
@@ -246,7 +213,3 @@ if __name__ == "__main__":
     window.setFixedSize(800, 480)
     window.show()
     sys.exit(app.exec_())
-
-# hotový kod
-# verze 2.0 - polling jen když je stránka viditelná (oprava sekání),
-# zviditelnění pro párování přesunuté sem z dock lišty

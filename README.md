@@ -2,10 +2,10 @@ Open Source Autoradio do Linux
 ==============================
 Autorádio pro Linux (Orange Pi 5 Pro a podobné desky), postavené na PyQt5. Běží jako jedno stálé okno (`main.py`) - jednotlivé aplikace jsou "vestavěné stránky" v `QStackedWidget`, mezi kterými appka přepíná okamžitě, bez zakládání nového procesu. Jen skutečně externí programy (welle-io pro DAB, Navit pro Navigaci) se spouští jako samostatný proces, protože jinak to nejde - ale i ty appka přepne do stejného fullscreen vzhledu jako zbytek appky.
 
-![desktop](printscreen/desktop.jpg)
-
 ## Základní moduly
 Většina modulů běží celá v Pythonu a využívá PyQt5. Ikony použité v appce jsem stáhnul z https://icons8.com/, ikony pro Domů, Bluetooth a BT Hudbu jsem dokreslil ve stejném stylu. Nahoře je stavový pruh s *datem* a *časem*, dole lišta (dock) pro rychlé přepínání mezi aplikacemi - všechny moduly mají společný *StyleSheet* (`style.py`), takže jde vzhled celé appky změnit na jednom místě.
+
+![desktop](printscreen/desktop.jpg)
 
 Hudební přehrávač
 ----------------------------------
@@ -16,6 +16,8 @@ Přehrávač lokální hudby (mp3/wav/ogg/flac - cokoliv, co zvládne VLC), naps
 Youtube a YouTube Music
 ----------------------------------
 Běží přímo vestavěné v aplikaci přes `QWebEngineView` - žádné samostatné okno Chromia, žádná cizí horní lišta prohlížeče kolem. Sestavují se líně, až při prvním otevření (ne hned při startu appky), takže appka naskočí rychle - jakmile jednou stránku otevřeš, zůstává už sestavená a další přepnutí na ni je okamžité. Adresu, na kterou se stránka otevře, lze změnit v `youtube.py` / `youtube_music.py` (proměnná `URL`).
+
+![desktop](printscreen/youtube.jpg)
 
 FM Radio
 ----------------------------------
@@ -29,6 +31,8 @@ Video přehrávač
 ----------------------------------
 Jednoduché okno jako spouštěč VLC přehrávače - appka jen zprostředkuje výběr souboru, samotné přehrávání pak běží ve vlastním okně VLC na celou obrazovku. Video by šlo teoreticky vykreslovat přímo uvnitř appky (embedovaný VLC widget), ale spolehlivost takového přístupu silně závisí na konkrétní kombinaci GPU/mesa ovladačů na ARM desce - předání práce samotnému VLC (který má vlastní, dobře odladěný pipeline pro hardwarové dekódování) je robustnější volba.
 
+![desktop](printscreen/video.jpg)
+
 DAB
 ----------------------------------
 Spouštěč nativní aplikace **welle-io** (`welle-io`), stejně jako u ostatních skutečně externích programů (Navigace/Navit) - appka jen otevře/zaostří jeho okno a přes `wmctrl` ho přepne na celou obrazovku, ať kolem něj není vidět GNOME horní lišta.
@@ -37,13 +41,19 @@ Appka měla dřív vlastní DAB modul napsaný nad bezhlavým `welle-cli` (viz h
 
 **Důležité:** DAB a FM Rádio sdílí stejný SDR dongle - najednou může fungovat jen jeden z nich. Pokud `welle-io` po spuštění nenajde žádné stanice, zkontroluj, že zrovna nehraje FM Rádio.
 
+![desktop](printscreen/welle.jpg)
+
 Počasí
 ----------------------------------
 Modul má svůj API klíč, kterým se hlásí na https://openweathermap.org/, odkud bere data pro Prahu (teplota, rychlost větru, vlhkost, oblačnost) a k tomu přiřazuje odpovídající obrázek ze složky `icons/weather`. Síťový dotaz běží v samostatném vlákně (`QThread`), takže i kdyby internet byl pomalý nebo úplně nedostupný, zbytek appky zůstane plynulý. Všechny naposledy stažené údaje appka ukládá do *weather_cache.json* - když není připojení k internetu, načte je odtamtud a napíše k nim datum a čas posledního uložení, ať je jasné, že jde o starší data.
 
+![desktop](printscreen/pocasi.jpg)
+
 Vyhledávač (Web)
 ----------------------------------
 Obecné prohlížení webu - stejně jako YouTube/YouTube Music běží vestavěně přes `QWebEngineView`, ne jako samostatný proces Chromia (dřívější řešení bylo znatelně pomalejší na otevření a jako samostatné okno ukazovalo GNOME lištu kolem sebe). Výchozí adresa (`https://www.google.com`) se dá změnit v `web.py` (proměnná `URL`).
+
+![desktop](printscreen/web.jpg)
 
 Nastavení
 ----------------------------------
@@ -63,11 +73,15 @@ Ukazuje **co se právě přehrává na telefonu připojeném přes Bluetooth** -
 
 Funguje to přes **BlueZ AVRCP** rozhraní (`org.bluez.MediaPlayer1` na systémové D-Bus sběrnici) - jakmile telefon streamuje hudbu do desky přes Bluetooth (A2DP), BlueZ automaticky zpřístupní i informace o přehrávané skladbě a dálkové ovládání, ať už je telefon Android nebo iPhone. Modul se na tohle rozhraní jen dívá, nepotřebuje žádné vlastní párování navíc. Data se obnovují každé 2 sekundy, ale jen dokud je stránka opravdu na obrazovce (viz sekce Výkon) - dřív běželo tohle dotazování na pozadí pořád, což appku pravidelně krátce zasekávalo.
 
+![desktop](printscreen/bluetooth.jpg)
+
 Navigace
 ----------------------------------
 Spouštěč nativní aplikace **Navit** (`navit`) - appka ho přes `wmctrl` navíc přepne do fullscreen, aby vypadal stejně jako zbytek appky, bez GNOME lišty kolem.
 
 Navit je vybraný záměrně místo GNOME Maps - je to navigační software navržený přímo pro "carputer" nasazení (touchscreen rozhraní, offline mapy, hlasové pokyny), a hlavně: **umí číst polohu přímo z `gpsd`**, úplně bez GeoClue2. To je zásadní rozdíl oproti GNOME Maps, které polohu berou výhradně přes GeoClue2 - tenhle systémový mezikrok (a jeho propojení s USB GPS přijímačem přes `gps-share`) se v praxi ukázal jako křehký a náchylný na těžko viditelné chyby (špatná oprávnění na socketu, chybějící "agent" pro potvrzení přístupu). Navit se čtením přímo z `gpsd` celé téhle vrstvě vyhne.
+
+![desktop](printscreen/navigace.jpg)
 
 **Kompletní nastavení (přijímač VK-162, u-blox čip):**
 
@@ -275,8 +289,6 @@ Pro nasazení v autě appka nemá běžet jen tehdy, když ji někdo ručně spu
 
 **Doporučený způsob: appka nad běžícím GNOME (`install-gnome-autostart.sh`).** Appka se spustí automaticky hned po přihlášení do normální GNOME session a běží přes celou obrazovku nad ní. V reálném provozu (ověřeno na Orange Pi 5 Pro) se ukázalo být spolehlivější než alternativa níže - fullscreen okna, dotyková klávesnice i párování Bluetooth fungují správně, protože běží skutečný `gnome-shell` s plnou podporou window manageru. Volitelný skript `trim-gnome.sh` (viz níže) pak zvládne většinu té "ceny navíc" (spotřeba paměti/CPU běžícího GNOME) srazit dolů bez ztráty těchhle výhod.
 
-**Alternativa: appka bez GNOME vůbec (`install-kiosk.sh`).** Bez GDM/gnome-shellu, jen holý X server + odlehčený okenní manažer *matchbox* + appka. V teorii úspornější, ale v reálném testování se ukázaly problémy - dotyková klávesnice (`onboard`) se špatně vykresluje a nezabírá celou obrazovku, a některá okna se chovají nespolehlivě, protože `matchbox` nemá plnou podporu pro fullscreen/dialogová okna jako skutečný desktop. Necháváme ho zdokumentovaný pro slabší desky, ale defaultně doporučujeme variantu s GNOME výše.
-
 ### Automatický start nad GNOME (doporučeno)
 
 Postup:
@@ -319,41 +331,6 @@ chmod +x trim-gnome.sh
 
 Konkrétně vypne/maskuje: indexování souborů (Tracker), kontrolu a stahování aktualizací na pozadí (GNOME Software, PackageKit, časovač automatického obnovování snapů), hlášení pádů (`whoopsie`, `apport`), synchronizaci kalendáře/kontaktů (Evolution Data Server), sdílení plochy/souborů a zálohování na pozadí, a animace uživatelského rozhraní (appka běží fullscreen, takže je stejně vidí málokdy). Každý krok jde nezávisle vrátit zpět - viz komentáře přímo ve skriptu (`systemctl unmask`, případně gsettings zpátky na `true`). Skript je bezpečné spustit i opakovaně, nic nerozbije už rozběhnutou appku ani není potřeba po něm restart.
 
-### Automatický start bez GNOME (alternativa, viz caveaty výše)
-Ve složce `kiosk/` je jednorázový instalátor, který:
-
-1. Vypne grafické přihlašovací okno (GDM a tedy i celý GNOME desktop), aby se po startu desky nespouštělo.
-2. Nastaví automatické přihlášení na tty1 (žádné zadávání hesla).
-3. Nainstaluje odlehčený okenní manažer *matchbox* (žádný panel, žádná plocha - jen správa oken, aby fungovala i okna Nastavení Wi-Fi/Bluetooth).
-4. Nainstaluje a nastaví dotykovou klávesnici *onboard* (viz níže).
-5. Nainstaluje podporu pro Bluetooth audio, aby telefon mohl na desku streamovat hudbu a modul BT Hudba mohl desku zviditelnit pro párování.
-6. Appku spustí automaticky přes `startx` hned po přihlášení, na celou obrazovku.
-
-Balíčky, které tenhle režim navíc potřebuje, jsou v sekci "Potřebné knihovny" výše. Instalátor si je nainstaluje sám, ruční instalace není potřeba.
-
-```
-cd /home/orangepi/Autoradio/kiosk
-chmod +x install-kiosk.sh
-sudo ./install-kiosk.sh
-sudo reboot
-```
-
-Po restartu appka naskočí sama, bez přihlašovací obrazovky a bez GNOME. `gnome-control-center`, `nm-connection-editor` i `blueman-manager` v Nastavení fungují dál normálně - matchbox jen spravuje jejich okna, GNOME shell k tomu není potřeba.
-
-**Návrat ke GNOME** (kdykoliv v budoucnu, např. pro přechod na variantu výše):
-```
-sudo systemctl enable --now display-manager.service
-sudo rm /etc/systemd/system/getty@tty1.service.d/override.conf
-sudo systemctl daemon-reload
-sudo reboot
-```
-
-### Dotyková klávesnice
-**Pokud jsi zvolil automatický start nad GNOME** (doporučeno), appka používá výhradně vestavěnou klávesnici GNOME (Screen Keyboard) - žádný `onboard` navíc. `install-gnome-autostart.sh` ji zapne automaticky (`org.gnome.desktop.a11y.applications screen-keyboard-enabled`), včetně přepnutí session na X11 (viz výše), pod kterým appka spolehlivě signalizuje aktivní textové pole přes accessibility rozhraní (`QT_ACCESSIBILITY=1` a Chromium `--force-renderer-accessibility`, oboje už appka nastavuje sama v `run_autoradio.sh`). Dá se doladit v Nastavení → Přístupnost → Klávesnice na obrazovce.
-
-Důležité omezení, o kterém stojí za to vědět: GNOME nedává zvenčí žádný spolehlivý způsob, jak tuhle klávesnici ručně vyvolat na povel - potvrzeno přímo vývojářem gnome-shellu (žádné D-Bus rozhraní pro to neexistuje, jen automatické zobrazení na focus). Appka proto v tomhle režimu nemá žádné tlačítko na ruční zapnutí/vypnutí klávesnice - pokud by se auto-show v nějakém konkrétním poli nespustilo, jinou možnost než zkusit kliknout znovu / do jiného pole bohužel není.
-
-**Pokud jsi zvolil variantu bez GNOME**, GNOME klávesnice bez gnome-shellu vůbec nefunguje, takže instalátor tam pořád používá `onboard` - ten funguje nezávisle na desktop prostředí. V reálném provozu se ale ukázalo, že se `onboard` pod `matchbox` může vykreslovat nespolehlivě a ořezaně - v tom případě je jednodušší přejít na variantu s GNOME výše. Appka sama v žádném režimu nemá tlačítko pro ruční zapnutí/vypnutí klávesnice (dřív mělo, ale bez fungujícího protějšku na GNOME straně to bylo jen matoucí mrtvé tlačítko - bylo odstraněné). Pro `onboard` jde klávesnici ručně přepnout přes `dbus-send --session --type=method_call --dest=org.onboard.Onboard /org/onboard/Onboard/Keyboard org.onboard.Onboard.Keyboard.ToggleVisible` v terminálu, kdyby to bylo někdy potřeba mimo appku.
 
 ### Fyzické tlačítko napájení
 Pokud má deska/displej připojené fyzické tlačítko napájení (ACPI power key), stojí za to nastavit, aby jen rovnou vypnulo zařízení, místo aby čekalo na potvrzení v nějakém dialogu:
@@ -368,41 +345,3 @@ Appka běžící nad GNOME (doporučená varianta) navíc potřebuje potlačit v
 ```
 gsettings set org.gnome.SessionManager logout-prompt false
 ```
-
-## Historie verzí
-Stručný přehled - podrobnosti k jednotlivým bodům jsou popsané výš u příslušných modulů/sekcí.
-
-- **v29 (finální verze)** - Kompletní průchod celým README a projektem. Sekce Navigace přepsaná a doplněná o ověřené kroky z externího návodu (OpenStreetMap Wiki, Navit/Ubuntu): vypnutí ukázkové mapy, nastavení češtiny, OSD panel pro dotykovou obrazovku (zoom tlačítka, rychlost, kompas, název ulice, zbývající čas/vzdálenost) - GPS připojení zůstalo u `gpsd` (VK-162 je kabelová USB myš, návod počítá s Bluetooth GPS). Zahrnuty i všechny poznatky z reálného ladění (`default_layout` musí odpovídat plnohodnotnému stylu jako "Car", ne odlehčenému stylu trasy jako "Route"; `no route found, pos blocked` = GPS pozice mimo silnici nebo špatný profil vozidla). Opravené poslední zapomenuté zmínky GNOME Maps v popisech, které už neodpovídaly skutečnému kódu (DAB a Navigace dávno spouští `welle-io`/`navit`, ne GNOME aplikace).
-
-- **v28** - Oprava syntaxe `maptool` v kroku 5 (Navigace) - `maptool` bere vstupní soubor přes `-i` a `--protobuf`, ne jako druhý holý argument (`Only one non-option argument allowed.`). Opraveno na `maptool --protobuf -i vstup.osm.pbf výstup.bin`.
-
-- **v27** - Oprava kroku 3 v postupu pro Navigaci - mylně jsem předpokládal, že Navit si při prvním spuštění sám zkopíruje výchozí konfiguraci do `~/.navit/navit.xml`. Ve skutečnosti čte jen systémově nainstalovanou konfiguraci (`/etc/navit/navit.xml` nebo `/usr/share/navit/navit.xml`) a do domovské složky nic nekopíruje - proto tam soubor předtím nebyl vůbec k nalezení. Krok teď obsahuje ruční zkopírování výchozí konfigurace.
-
-- **v26** - Opravený postup pro mapová data v Navitu - dřív zmíněné menu "Mapy → Stáhnout mapu" v aktuální verzi neexistuje/nebylo ověřené. Nahrazeno skutečně zdokumentovaným postupem: stažení výřezu z Geofabriku (`.osm.pbf`) a převod vlastním nástrojem `maptool` (nový balíček v seznamu závislostí) do binárního formátu, který se pak přidá do `~/.navit/navit.xml`.
-
-- **v25** - Oprava instalace Navitu - balíček `navit` na Ubuntu/Debianu neobsahuje žádné grafické rozhraní (`FATAL: No GUI available.` hned po spuštění), je nutně potřeba i `navit-gui-internal` a `navit-graphics-gtk-drawing-area` zvlášť. Aktualizované ve všech třech místech v README (hlavní instalační příkaz, seznam knihoven, krok 3 v postupu pro Navigaci).
-
-- **v24** - Navigace přepnutá z GNOME Maps na **Navit** - navigační software navržený přímo pro carputer nasazení, s vlastním čtením GPS přímo z `gpsd`, bez GeoClue2. Řeší to napořád celou třídu problémů, se kterými jsme se prokousávali (`gps-share`, oprávnění na socketu, GeoClue2 agent) - Navit se GeoClue2 vůbec netýká. GNOME Maps zůstává zdokumentované jako alternativa pro toho, kdo by ji přesto chtěl.
-
-- **v23** - Opravená skutečná příčina, proč GNOME Maps nikdy nedostávaly polohu z GPS i po správné konfiguraci GeoClue2 (viz sekce Navigace): `gps-share` běží jako root a vytvářel unix socket s právy `755` (root:root), na který systémový účet `geoclue` neměl zápisové právo - připojení k unixovému socketu bez zápisu selže úplně potichu, bez chyby v logu, takže to vypadalo jako "nic nefunguje, ale nikde není vidět proč". Přidané `UMask=0000` do systemd jednotky `gps-share.service`, ať socket vznikne s právy `666` a `geoclue` se k němu dostane.
-
-- **v22** - DAB vrácený zpět na spouštěč skutečné aplikace `welle-io` (vlastní modul nad `welle-cli` z v19 se v praxi ukázal jako zbytečná komplikace navíc - `welle-io` má vlastní seznam stanic, slideshow i lepší metadata). Odstraněné mrtvé tlačítko pro ruční zapnutí/vypnutí klávesnice v docku - GNOME variantě k ničemu nepomáhalo (žádné API pro to neexistuje) a jen matlo.
-- **v21** - Oprava neviditelného textu v rozbalovacím seznamu kanálů DAB (bílý text na bílém pozadí - Qt nestyluje rozbalený seznam automaticky stejně jako zavřené pole, potřebuje vlastní pravidlo). Kompletní kontrola kódu napříč celou appkou i README - pár zastaralých komentářů/hlášek opravených na přesný current stav (žádné funkční chyby nenalezené mimo tu s DAB seznamem).
-- **v20** - GNOME autostart už nepoužívá `onboard` vůbec, jen vestavěnou GNOME klávesnici (Screen Keyboard) - ověřeno, že GNOME nemá žádné rozhraní pro ruční vyvolání klávesnice zvenčí, takže appka v tomhle režimu nemá ani tlačítko pro ruční zapnutí/vypnutí. `onboard` zůstává jen u alternativní bare-X varianty (`install-kiosk.sh`), kde GNOME klávesnice bez gnome-shellu nefunguje.
-- **v19** - Vlastní modul DAB (nahrazuje spouštěč welle.io GUI, viz modul DAB výše), skript `trim-gnome.sh` na omezení zátěže GNOME, README přeorganizované (historie verzí přesunutá sem na konec, popisy modulů rozšířené).
-- **v18** - Fullscreen napříč appkami (welle.io/GNOME Maps přes `wmctrl`), Web vestavěný místo externího Chromia, spolehlivější dotyková klávesnice (přepnutí na X11 + `onboard` vedle GNOME klávesnice), Nastavení: Bluetooth tlačítko nahrazené Výstupem zvuku, fronta v hudebním přehrávači.
-- **v17** - Doporučený automatický start nad běžícím GNOME (`install-gnome-autostart.sh`) místo bare-X kiosku - spolehlivější fullscreen, klávesnice i GeoClue2.
-- **v16** - GeoClue2 v kiosk režimu bez agenta - explicitní povolení aplikací v `/etc/geoclue/conf.d/`.
-- **v15** - Oprava pravidelného zasekávání appky (BT Hudba dotazovalo na pozadí i mimo obrazovku), sloučení Bluetooth ikonek do jedné.
-- **v14** - Odebrané vestavěné Mapy (duplicita s Navigací), nový modul BT Hudba.
-- **v13** - Podrobný postup pro GPS VK-162 (`gps-share` + GeoClue2 + GNOME Maps).
-- **v12** - Potvrzené opravy z reálného nasazení: welle.io Qt6 QML fix, fyzické tlačítko napájení.
-- **v11**, **v10** - Opravy po testu na reálném zařízení (chybějící soubor v hudebním přehrávači, layout Počasí, Bluetooth zviditelnění).
-- **v9** - Odebrání Spotify (nefunkční), oprava hudebního přehrávače, Bluetooth ikonka v docku.
-- **v8** - Dotyková klávesnice (`onboard`) v kiosk režimu.
-- **v7** - Přidaný kiosk režim (automatický start bez GNOME, přes `matchbox`).
-- **v6** - Kontrola kódu a README, vyšperkovaný retro vzhled (gradienty, LCD panely).
-- **v5** - Odebrání Spotify (první pokus), odolnost appky vůči chybějícím volitelným knihovnám.
-- **v4** - Ukládání oblíbených stanic ve FM Rádiu, Bluetooth ikonka.
-- **v3** - YouTube a YouTube Music vestavěné (`QWebEngineView`) místo spouštění Chromia.
-- **v2** - Přechod z více oken na jedno stálé okno (`QStackedWidget`), dock s domečkem, retro vzhled.

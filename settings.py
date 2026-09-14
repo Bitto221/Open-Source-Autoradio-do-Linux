@@ -18,14 +18,8 @@ class Settings(QWidget):
         self.setObjectName("mainWindow")
         self.setAttribute(Qt.WA_StyledBackground, True)
         self.setStyleSheet(style.stylesheet())
-        # Called when the user taps "Ukončit aplikaci". Defaults to
-        # closing just this Qt process; the shell can pass its own
-        # callback (e.g. QApplication.quit) when embedding this page.
         self.on_exit = on_exit or QApplication.quit
 
-        # Debounces pactl calls while the volume slider is being
-        # dragged - without this, every intermediate value while
-        # sliding would spawn its own subprocess.
         self._pending_volume = None
         self._volume_timer = QTimer(self)
         self._volume_timer.setSingleShot(True)
@@ -103,9 +97,6 @@ class Settings(QWidget):
         return box
 
     def set_volume(self, value):
-        # Just remember the latest value and (re)start the debounce
-        # timer - _apply_volume() does the actual pactl call once the
-        # slider settles, instead of once per intermediate tick.
         self._pending_volume = value
         self._volume_timer.start()
 
